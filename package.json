@@ -34,6 +34,8 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@fontsource/alfa-slab-one": "^5.0.20"
+		"@fontsource/alfa-slab-one": "^5.0.20",
+		"amplify-adapter": "^0.1.2",
+		"svelte-youtube-lite": "^0.5.1"
 	}
 }
