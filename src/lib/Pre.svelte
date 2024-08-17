@@ -2,37 +2,6 @@
     import { onMount } from 'svelte';
     import { fade } from 'svelte/transition';
     import { Youtube } from 'svelte-youtube-lite';
-    let email = '';
-    let subscribed = false;
-    let error = '';
-    function validateEmail(email) {
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return re.test(email);
-    }
-    async function handleSubscribe() {
-      if (!validateEmail(email)) {
-        error = 'Por favor, insira um e-mail válido.';
-        return;
-      }
-      try {
-        const response = await fetch('https://hooks.zapier.com/hooks/catch/1863715/262ku5n/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email }),
-        });
-        if (response.ok) {
-          subscribed = true;
-          email = '';
-          error = '';
-        } else {
-          error = 'Ocorreu um erro. Por favor, tente novamente.';
-        }
-      } catch (err) {
-        error = 'Ocorreu um erro. Por favor, tente novamente.';
-      }
-    }
   </script>
   
   <main>
@@ -44,30 +13,11 @@
       segura de uma única vez
     </p>
   
+    <h2>em breve...</h2>
+
     <Youtube id="X_JlLlebbx0" />
   
-  
-    <p class="subtitle">
-      <strong>Entre na nossa lista de espera:</strong>
-    </p>
-  
-    {#if !subscribed}
-      <div class="input-group">
-        <input 
-          type="email" 
-          bind:value={email} 
-          placeholder="Seu e-mail"
-          on:keypress={(e) => e.key === 'Enter' && handleSubscribe()}
-        />
-        <button on:click={handleSubscribe}>Inscrever-se</button>
-      </div>
-      {#if error}
-        <p class="error">{error}</p>
-      {/if}
-    {:else}
-      <p class="success">Obrigado por se inscrever! Entraremos em contato em breve.</p>
-    {/if}
-  
+    
     <footer>
       2024 por ProcStudio e <a href="https://www.youtube.com/@brunopellizzetti" target="_blank">Bruno Pellizzetti</a>
     </footer>
@@ -96,6 +46,14 @@
         color: #005C4B;
       }
     
+      h2 {
+        font-size: 1.5em;
+        margin-bottom: 10px;
+        font-family: 'Alfa Slab One', system-ui;
+        text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+        color: #005C4B;
+      }
+
       .subtitle, .instructions {
         margin-bottom: 20px;
         color: #019D80
