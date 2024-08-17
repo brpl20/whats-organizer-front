@@ -12,7 +12,7 @@ frontend:
       commands:
         - /root/.local/share/pnpm/pnpm run build
   artifacts:
-    baseDirectory: dist
+    baseDirectory: build  # Change this to match your Svelte output directory
     files:
       - '**/*'
   cache:
