@@ -4,12 +4,15 @@ frontend:
     preBuild:
       commands:
         - curl -fsSL https://get.pnpm.io/install.sh | sh -
-        - pnpm install --frozen-lockfile
+        - source /root/.bashrc
+        - export PNPM_HOME="/root/.local/share/pnpm"
+        - export PATH="$PNPM_HOME:$PATH"
+        - /root/.local/share/pnpm/pnpm install --frozen-lockfile
     build:
       commands:
-        - pnpm run build
+        - /root/.local/share/pnpm/pnpm run build
   artifacts:
-    baseDirectory: public
+    baseDirectory: dist
     files:
       - '**/*'
   cache:
