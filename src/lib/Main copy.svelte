@@ -156,10 +156,6 @@
     return filename && filename.endsWith('.opus');
   }
 
-  function isVideoFile(filename) {
-    return filename && filename.endsWith('.mp4');
-  }
-
   function getFileName(path) {
     return path.split('/').pop();
   }
@@ -195,89 +191,70 @@
       {isLoading ? 'Processing...' : 'Send'}
     </button>
   </div>
-
+  
   {#if error}
     <p class="error">{error}</p>
   {/if}
 
-  <!-- FAST FIX HERE --- MUDAR O FALSE PARA !== -->
   {#if messages.length > 0}
-  <div class="chat-container">
-    {#each messages as message}
-      {#if message.FileAttached !== true}
-        <span>Meu Novo Console.log</span>
-        <!-- <span>{JSON.stringify(message)}</span> -->
-      {/if}
-    {/each}
-  </div>
-{/if}
-<!-- FAST FIX HERE --- MUDAR O FALSE PARA !== -->
-
-
-  {#if messages.length > 0}
-  <div class="chat-container">
-    {#each messages as message}
-      <div class="message-wrapper {message.ID === 1 ? 'left' : 'right'}">
-        <div class="message-bubble">
-          <div class="message-header">
-            <span class="message-name">{message.Name}</span>
-            <span class="message-time">{message.Time}</span>
+    <div class="chat-container">
+      {#each messages as message}
+        <div class="message-wrapper {message.ID === 1 ? 'left' : 'right'}">
+          <div class="message-bubble">
+            <div class="message-header">
+              <span class="message-name">{message.Name}</span>
+              <span class="message-time">{message.Time}</span>
+            </div>
+            
+            {#if message.FileAttached}
+              {#if message.type === 'pdf'}
+                <div class="file-attachment">
+                  <img src="/pdf-icon.png" alt="PDF" class="file-icon" />
+                  <span>{message.FileAttached}</span>
+                </div>
+              {:else if message.type === 'docx'}
+                <div class="docx-preview">
+                  {#each message.pages as page, i}
+                    <p>{page}</p>
+                  {/each}
+                  {#if message.pages.length === 6}
+                    <span class="more-pages">...</span>
+                    <p>Arquivo maior que seis páginas, consulte o original</p>
+                  {/if}
+                </div>
+              {:else if message.type === 'image'}
+                <img src={message.FileURL} alt="Image" class="image-preview" />
+              {:else if message.type === 'video'}
+                <div class="video-preview">
+                  <img src={message.thumbnail} alt="Video thumbnail" />
+                  <video controls src={message.FileURL}></video>
+                </div>
+              {:else if isAudioFile(message.FileAttached)}
+                <div class="audio-message">
+                  <div class="audio-filename">{getFileName(message.FileAttached)}</div>
+                  <audio controls src={message.FileURL}></audio>
+                  {#if message.AudioTranscription}
+                    <div class="transcription">
+                      {message.AudioTranscription}
+                    </div>
+                  {/if}
+                </div>
+              {:else}
+                <div class="file-attachment">
+                  <img src="/file-icon.png" alt="File" class="file-icon" />
+                  <span>{message.FileAttached}</span>
+                </div>
+              {/if}
+            {:else}
+              <p class="message-text">{message.Message}</p>
+            {/if}
           </div>
-          
-          {#if message.FileAttached && message.links}
-            <div class="file-attachment">
-              <img src="/pdf-icon.png" alt="PDF" class="file-icon" />
-              <span>{message.FileAttached}</span>
-            </div>
-            <div class="thumbnails">
-              {#each message.links as link}
-                <div class="thumbnail-container">
-                  <img src={link} alt="PDF as Image" class="thumbnail-pdf" />
-                </div>
-              {/each}
-              <spam>Imagens apenas ilustrativas, confira os arquivos originais, demonstrando no máximo 6 miniaturas.</spam>
-            </div>
-          {:else if message.type === 'docx'}
-            <div class="docx-preview">
-              {#each message.pages as page, i}
-                <p>{page}</p>
-              {/each}
-              {#if message.pages.length === 6}
-                <span class="more-pages">...</span>
-                <p>Arquivo maior que seis páginas, consulte o original</p>
-              {/if}
-            </div>
-          {:else if message.FileAttached }
-            <img src={message.FileURL} alt="Image" class="image-preview" />
-            <spam>Meu Novo Console.log</spam>
-            <spam>{message}</spam>
-            <div class="video-preview">{getVideoInfo(message.FileAttached)}</div>
-              <img src={message.thumbnail} alt="Video thumbnail" />
-              <video controls src={message.FileURL}></video>
-          {:else if isAudioFile(message.FileAttached)}
-            <div class="audio-message">
-              <div class="audio-filename">{getFileName(message.FileAttached)}</div>
-              <audio controls src={message.FileURL}></audio>
-              {#if message.AudioTranscription}
-                <div class="transcription">
-                  {message.AudioTranscription}
-                </div>
-              {/if}
-            </div>
-          {:else if message.FileAttached}
-            <div class="file-attachment">
-              <img src="/file-icon.png" alt="File" class="file-icon" />
-              <span>{message.FileAttached}</span>
-            </div>
-          {:else}
-            <p class="message-text">{message.Message}</p>
-          {/if}
+          <div class="message-date">{message.Date}</div>
         </div>
-        <div class="message-date">{message.Date}</div>
-      </div>
-    {/each}
-  </div>
-{/if}
+      {/each}
+    </div>
+  {/if}
+
   <p class="instructions">
     Faça o upload do seu arquivo exportado do WhatsApp<br>
     ele estará no formato .zip, confira como fazer:
@@ -578,13 +555,6 @@
     cursor: pointer;
     padding: 0;
     margin-left: 5px;
-  }
-
-  .thumbnail-pdf {
-    width:200px;
-    height:200px;
-    object-fit: cover;
-    padding: 5px;
   }
 
 

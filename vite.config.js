@@ -4,15 +4,12 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [sveltekit()],
   optimizeDeps: {
-    include: ['jszip', 'mammoth']
+    include: ['mammoth']
   },
   build: {
     commonjsOptions: {
       include: [/node_modules/]
     }
-  },
-  ssr: {
-    noExternal: ['pdfjs-dist']
   }
 });
 
