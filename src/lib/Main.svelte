@@ -164,10 +164,6 @@
     return path.split('/').pop();
   }
 
-  function editTranscription(message) {
-    // Implement transcription editing logic here
-    console.log('Edit transcription for:', message);
-  }
 
   onMount(() => {
     if (browser) {
@@ -200,84 +196,78 @@
     <p class="error">{error}</p>
   {/if}
 
-  <!-- FAST FIX HERE --- MUDAR O FALSE PARA !== -->
   {#if messages.length > 0}
-  <div class="chat-container">
-    {#each messages as message}
-      {#if message.FileAttached !== true}
-        <span>Meu Novo Console.log</span>
-        <!-- <span>{JSON.stringify(message)}</span> -->
-      {/if}
-    {/each}
-  </div>
-{/if}
-<!-- FAST FIX HERE --- MUDAR O FALSE PARA !== -->
-
-
-  {#if messages.length > 0}
-  <div class="chat-container">
-    {#each messages as message}
-      <div class="message-wrapper {message.ID === 1 ? 'left' : 'right'}">
-        <div class="message-bubble">
-          <div class="message-header">
-            <span class="message-name">{message.Name}</span>
-            <span class="message-time">{message.Time}</span>
-          </div>
-          
-          {#if message.FileAttached && message.links}
-            <div class="file-attachment">
-              <img src="/pdf-icon.png" alt="PDF" class="file-icon" />
-              <span>{message.FileAttached}</span>
+    <div class="chat-container">
+      {#each messages as message}
+        <div class="message-wrapper {message.ID === 1 ? 'left' : 'right'}">
+          <div class="message-bubble">
+            <div class="message-header">
+              <span class="message-name">{message.Name}</span>
+              <span class="message-time">{message.Time}</span>
             </div>
-            <div class="thumbnails">
-              {#each message.links as link}
-                <div class="thumbnail-container">
-                  <img src={link} alt="PDF as Image" class="thumbnail-pdf" />
-                </div>
-              {/each}
-              <spam>Imagens apenas ilustrativas, confira os arquivos originais, demonstrando no máximo 6 miniaturas.</spam>
-            </div>
-          {:else if message.type === 'docx'}
-            <div class="docx-preview">
-              {#each message.pages as page, i}
-                <p>{page}</p>
-              {/each}
-              {#if message.pages.length === 6}
-                <span class="more-pages">...</span>
-                <p>Arquivo maior que seis páginas, consulte o original</p>
-              {/if}
-            </div>
-          {:else if message.FileAttached }
-            <img src={message.FileURL} alt="Image" class="image-preview" />
-            <spam>Meu Novo Console.log</spam>
-            <spam>{message}</spam>
-            <div class="video-preview">{getVideoInfo(message.FileAttached)}</div>
-              <img src={message.thumbnail} alt="Video thumbnail" />
-              <video controls src={message.FileURL}></video>
-          {:else if isAudioFile(message.FileAttached)}
+        {#if message.FileAttached !== false}
+          {#if message.FileAttached }
+            {#if message.links}
+              <!-- <spam class="debug">This is the PDF Block</spam> -->
+              <!-- <spam class="debug">Uncomment to Debug</spam> -->
+              <div class="thumbnails">
+                <div class="filename">{getFileName(message.FileAttached)}</div>
+                {#each message.links as link}
+                    <div class="thumbnail-container">
+                      <img src={link} alt="PDF as Image" class="thumbnail-pdf" />
+                    </div>
+                  {/each}
+                  <span class="small-description">Imagens apenas ilustrativas, confira os arquivos originais, demonstrando no  6 miniaturas máximo.</span>
+                </div>    
+            {/if}
+            {#if message.FileAttached.toLowerCase().includes('.docx')}
+              <!-- <span class="debug">This is the DocX Block</span> -->
+              <div class="filename">{getFileName(message.FileAttached)}</div>
+            {/if}
+            
+            {#if isAudioFile(message.FileAttached)}
             <div class="audio-message">
               <div class="audio-filename">{getFileName(message.FileAttached)}</div>
               <audio controls src={message.FileURL}></audio>
+              <!-- <span class="debug">{message.FileURL}</span> -->
               {#if message.AudioTranscription}
                 <div class="transcription">
                   {message.AudioTranscription}
                 </div>
               {/if}
             </div>
-          {:else if message.FileAttached}
-            <div class="file-attachment">
-              <img src="/file-icon.png" alt="File" class="file-icon" />
-              <span>{message.FileAttached}</span>
-            </div>
-          {:else}
-            <p class="message-text">{message.Message}</p>
-          {/if}
-        </div>
-        <div class="message-date">{message.Date}</div>
+            {/if}
+            
+            {#if message.FileAttached.toLowerCase().includes('.mp4')}
+              <!-- <span class="debug">This is the Video Block</span> -->
+              <div class="filename">{getFileName(message.FileAttached)}</div>
+              <div class="video-preview">{getVideoInfo(message.FileAttached)}</div>
+                <img src={message.thumbnail} alt="Video thumbnail" />
+              <video controls src={message.FileURL}></video>
+            {/if}
+
+            {#if message.FileAttached.toLowerCase().includes('.jpg') || 
+                 message.FileAttached.toLowerCase().includes('.jpeg') || 
+                 message.FileAttached.toLowerCase().includes('.png')}
+            <!-- <span class="debug">This is the Image Block</span>
+              -->
+            <div class="filename">{getFileName(message.FileAttached)}</div>
+            <img src={message.FileURL} alt="Image" class="image-preview" />
+            {/if}
+        {/if}
+        {:else}
+          <p class="message-text">{message.Message}</p>
+      {/if}
       </div>
-    {/each}
-  </div>
+    </div>
+  {/each}
+</div>
 {/if}
+
+ 
+
+
+  
   <p class="instructions">
     Faça o upload do seu arquivo exportado do WhatsApp<br>
     ele estará no formato .zip, confira como fazer:
@@ -516,6 +506,12 @@
     margin-bottom: 5px;
   }
 
+  .filename {
+    font-size: 0.8em;
+    color: #666;
+    margin-bottom: 5px;
+  }
+
   .transcription {
     margin-top: 5px;
     font-style: italic;
@@ -587,6 +583,21 @@
     padding: 5px;
   }
 
+  .small-description {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+  line-height: 1.4;
+  max-width: 300px;
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-left: 3px solid #ccc;
+  margin: 10px 0;
+  display: inline-block;
+}
 
-  /* ... (styles remain the same as in the previous version) */
+.debug {
+  border: 1px solid red !important;
+  background-color: rgba(255, 0, 0, 0.1) !important;
+}
 </style>
