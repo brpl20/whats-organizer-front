@@ -4,6 +4,8 @@
   import JSZip from 'jszip';
   import mammoth from 'mammoth';
   import { browser } from '$app/environment';
+  import { io } from 'socket.io-client';
+  import jsPDF from 'jspdf';
 
   let fileInput;
   let result = null;
@@ -12,6 +14,14 @@
   let showLimitacoesModal = false;
   let showLGPDModal = false;
   let messages = [];
+  let socketMessages = [];
+  let showPDFButton = false;
+
+  const socket = io('http://localhost:5000');
+
+  socket.on('Smessage', (data) => {
+    socketMessages = [...socketMessages, data.data];
+  });
 
   function toggleLimitacoesModal() {
     showLimitacoesModal = !showLimitacoesModal;
@@ -24,12 +34,12 @@
   async function processZipFile(file) {
     const zip = new JSZip();
     const contents = await zip.loadAsync(file);
-    
+
     for (let [filename, zipEntry] of Object.entries(contents.files)) {
       const arrayBuffer = await zipEntry.async('arraybuffer');
       const blob = new Blob([arrayBuffer], { type: getFileType(filename) });
       const url = URL.createObjectURL(blob);
-      
+
       messages = await Promise.all(messages.map(async (msg) => {
         if (msg.FileAttached === filename) {
           const fileInfo = await getFileInfo(blob, filename);
@@ -137,18 +147,43 @@
       }
 
       result = await response.json();
-      // Check if the response contains an error
       if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
-        error = result[0].ERRO; // Set the error message to be displayed
+        error = result[0].ERRO;
       } else {
         messages = result;
         await processZipFile(file);
+        showPDFButton = true; // Show the PDF button after processing
       }
     } catch (e) {
       console.error("Houve um erro ao processar o arquivo:", e);
       error = "Houve um erro ao processar o arquivo. Por favor tente .";
     } finally {
       isLoading = false;
+    }
+  }
+
+  function generatePDF() {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'px',
+      format: [595, 842] // A4 Size
+    });
+
+    const chatContainer = document.querySelector('.chat-container');
+
+    if (chatContainer) {
+      doc.html(chatContainer, {
+        callback: function (doc) {
+          doc.save('chat.pdf');
+        },
+        x: 10,
+        y: 10,
+        html2canvas: {
+          scale: 0.5 // scale
+        }
+      });
+    } else {
+      console.error('Chat container not found');
     }
   }
 
@@ -163,7 +198,6 @@
   function getFileName(path) {
     return path.split('/').pop();
   }
-
 
   onMount(() => {
     if (browser) {
@@ -184,13 +218,22 @@
     e transcreva áudios de forma rápida e<br>
     segura de uma única vez
   </p>
-  
-  <div>
-    <input type="file" bind:this={fileInput} accept=".zip" />
-    <button on:click={handleSubmit} disabled={isLoading}>
-      {isLoading ? 'Processing...' : 'Send'}
-    </button>
-  </div>
+  {#if isLoading}
+    <div class="spinner"></div>
+    <h2>Processando...</h2>
+      <ul>
+          {#each socketMessages as smessage}
+              <li>{smessage}</li>
+          {/each}
+      </ul>
+  {:else}
+    <div>
+      <input type="file" bind:this={fileInput} accept=".zip" />
+      <button on:click={handleSubmit} disabled={isLoading}>
+        {isLoading ? 'Processando...' : 'Send'}
+      </button>
+    </div>
+  {/if}
 
   {#if error}
     <p class="error">{error}</p>
@@ -205,77 +248,72 @@
               <span class="message-name">{message.Name}</span>
               <span class="message-time">{message.Time}</span>
             </div>
-        {#if message.FileAttached !== false}
-          {#if message.FileAttached }
-            {#if message.links}
-              <!-- <spam class="debug">This is the PDF Block</spam> -->
-              <!-- <spam class="debug">Uncomment to Debug</spam> -->
-              <div class="thumbnails">
-                <div class="filename">{getFileName(message.FileAttached)}</div>
-                {#each message.links as link}
-                    <div class="thumbnail-container">
-                      <img src={link} alt="PDF as Image" class="thumbnail-pdf" />
-                    </div>
-                  {/each}
-                  <span class="small-description">Imagens apenas ilustrativas, confira os arquivos originais, demonstrando no  6 miniaturas máximo.</span>
-                </div>    
-            {/if}
-            {#if message.FileAttached.toLowerCase().includes('.docx')}
-              <!-- <span class="debug">This is the DocX Block</span> -->
-              <div class="filename">{getFileName(message.FileAttached)}</div>
-            {/if}
-            
-            {#if isAudioFile(message.FileAttached)}
-            <div class="audio-message">
-              <div class="audio-filename">{getFileName(message.FileAttached)}</div>
-              <audio controls src={message.FileURL}></audio>
-              <!-- <span class="debug">{message.FileURL}</span> -->
-              {#if message.AudioTranscription}
-                <div class="transcription">
-                  {message.AudioTranscription}
-                </div>
+            {#if message.FileAttached !== false}
+              {#if message.FileAttached }
+                {#if message.links}
+                  <div class="thumbnails">
+                    <div class="filename">{getFileName(message.FileAttached)}</div>
+                    {#each message.links as link, index}
+                      {#if index % 2 === 0}
+                        <div class="thumbnail-container">
+                          <img 
+                            src={link} 
+                            alt="PDF as Image" 
+                            class="thumbnail-pdf {message.links[index + 1] === 'landscape' ? 'landscape' : 'portrait'}" 
+                          />
+                        </div>
+                      {/if}
+                    {/each}
+                    <span class="small-description">Imagens apenas ilustrativas, confira os arquivos originais, demonstrando no  6 miniaturas máximo.</span>
+                  </div>    
+                {/if}
+                {#if message.FileAttached.toLowerCase().includes('.docx')}
+                  <div class="filename">{getFileName(message.FileAttached)}</div>
+                {/if}
+                
+                {#if isAudioFile(message.FileAttached)}
+                  <div class="audio-message">
+                    <div class="audio-filename">{getFileName(message.FileAttached)}</div>
+                    <audio controls src={message.FileURL}></audio>
+                    {#if message.AudioTranscription}
+                      <div class="transcription">
+                        {message.AudioTranscription}
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
+                
+                {#if message.FileAttached.toLowerCase().includes('.mp4')}
+                  <video controls src={message.FileURL}></video>
+                {/if}
+
+                {#if message.FileAttached.toLowerCase().includes('.jpg') || 
+                     message.FileAttached.toLowerCase().includes('.jpeg') || 
+                     message.FileAttached.toLowerCase().includes('.png')}
+                  <div class="filename">{getFileName(message.FileAttached)}</div>
+                  <img src={message.FileURL} alt="Image" class="image-preview" />
+                {/if}
               {/if}
-            </div>
+            {:else}
+              <p class="message-text">{message.Message}</p>
             {/if}
-            
-            {#if message.FileAttached.toLowerCase().includes('.mp4')}
-              <!-- <span class="debug">This is the Video Block</span> -->
-              <div class="filename">{getFileName(message.FileAttached)}</div>
-              <div class="video-preview">{getVideoInfo(message.FileAttached)}</div>
-                <img src={message.thumbnail} alt="Video thumbnail" />
-              <video controls src={message.FileURL}></video>
-            {/if}
-
-            {#if message.FileAttached.toLowerCase().includes('.jpg') || 
-                 message.FileAttached.toLowerCase().includes('.jpeg') || 
-                 message.FileAttached.toLowerCase().includes('.png')}
-            <!-- <span class="debug">This is the Image Block</span>
-              -->
-            <div class="filename">{getFileName(message.FileAttached)}</div>
-            <img src={message.FileURL} alt="Image" class="image-preview" />
-            {/if}
-        {/if}
-        {:else}
-          <p class="message-text">{message.Message}</p>
-      {/if}
-      </div>
+          </div>
+        </div>
+      {/each}
     </div>
-  {/each}
-</div>
-{/if}
+  {/if}
 
- 
-
-
-  
   <p class="instructions">
     Faça o upload do seu arquivo exportado do WhatsApp<br>
     ele estará no formato .zip, confira como fazer:
   </p>
-
-  <div class="icons">
-    <span class="icon">🍎</span>
-    <span class="icon">🤖</span>
+  <div class="platform-icons">
+    <a href="https://apps.apple.com/your-app" class="platform-icon">
+      <img src="/apple.png" alt="Apple icon" class="icon-image icon-apple" />
+    </a>
+    <a href="https://play.google.com/store/your-app" class="platform-icon">
+      <img src="/android.png" alt="Android icon" class="icon-image icon-android" />
+    </a>
   </div>
 
   <div class="buttons">
@@ -286,6 +324,12 @@
   <footer>
     2024 por ProcStudio e Bruno Pellizzetti
   </footer>
+
+  {#if showPDFButton}
+    <button class="floating-button" on:click={generatePDF}>
+      Download PDF
+    </button>
+  {/if}
 </main>
 
 {#if showLimitacoesModal}
@@ -313,7 +357,20 @@
 {/if}
 
 <style>
-    main {
+  .spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #09f;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  main {
     font-family: Arial, sans-serif;
     max-width: 600px;
     margin: 0 auto;
@@ -334,7 +391,7 @@
 
   .subtitle, .instructions {
     margin-bottom: 20px;
-    color: #019D80
+    color: #019D80;
   }
 
   .input-group {
@@ -359,13 +416,31 @@
     cursor: pointer;
   }
 
-  .icons {
-    font-size: 2em;
-    margin-bottom: 20px;
+  .platform-icons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
   }
 
-  .icon {
-    margin: 0 10px;
+  .platform-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    transition: background-color 0.3s ease;
+  }
+
+  .platform-icon:hover {
+    background-color: #145C4B;
+  }
+
+  .icon-image {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
   }
 
   .buttons {
@@ -457,6 +532,13 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 
+  .message-bubble video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    overflow: hidden;
+  }
+
   .left .message-bubble {
     background-color: #ffffff;
   }
@@ -539,6 +621,12 @@
     width: calc(33% - 10px);
     object-fit: cover;
     border: 1px solid #ccc;
+    transition: transform 0.3s ease;
+  }
+
+  .pdf-preview:hover {
+    transform: scale(3.5);
+    z-index: 10;
   }
 
   .more-pages {
@@ -547,8 +635,14 @@
   }
 
   .image-preview {
-    max-width: 100%;
+    width: 100px;
     height: auto;
+    transition: transform 0.3s ease;
+  }
+
+  .image-preview:hover {
+    transform: scale(3.5);
+    z-index: 10;
   }
 
   .video-preview {
@@ -577,27 +671,68 @@
   }
 
   .thumbnail-pdf {
-    width:200px;
-    height:200px;
+    width: 200px;
+    height: 200px;
     object-fit: cover;
     padding: 5px;
   }
 
-  .small-description {
-  font-size: 12px;
-  color: #666;
-  font-style: italic;
-  line-height: 1.4;
-  max-width: 300px;
-  padding: 8px 12px;
-  background-color: #f5f5f5;
-  border-left: 3px solid #ccc;
-  margin: 10px 0;
-  display: inline-block;
-}
+  .thumbnail-pdf.landscape {
+    width: 300px;
+    height: 150px;
+    transition: transform 0.3s ease;
+  }
 
-.debug {
-  border: 1px solid red !important;
-  background-color: rgba(255, 0, 0, 0.1) !important;
-}
+  .thumbnail-pdf.portrait {
+    width: 150px;
+    height: 200px;
+    transition: transform 0.3s ease;
+  }
+
+  .thumbnail-pdf.landscape:hover {
+    transform: scale(3.5);
+    z-index: 10;
+  }
+
+  .thumbnail-pdf.portrait:hover {
+    transform: scale(3.5);
+    z-index: 10;
+  }
+
+  .small-description {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+    line-height: 1.4;
+    max-width: 300px;
+    padding: 8px 12px;
+    background-color: #f5f5f5;
+    border-left: 3px solid #ccc;
+    margin: 10px 0;
+    display: inline-block;
+  }
+
+  .debug {
+    border: 1px solid red !important;
+    background-color: rgba(255, 0, 0, 0.1) !important;
+  }
+
+  .icon img {
+    width: 24px;
+    height: auto;
+    vertical-align: middle;
+  }
+
+  .floating-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    padding: 15px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  }
 </style>
