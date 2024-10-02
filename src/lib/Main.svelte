@@ -292,7 +292,7 @@
                      message.FileAttached.toLowerCase().includes('.jpeg') || 
                      message.FileAttached.toLowerCase().includes('.png')}
                   <div class="filename">{getFileName(message.FileAttached)}</div>
-                  <img src={message.FileURL} alt="Image" class="image-preview" />
+                  <img src={message.FileURL} alt="Image file" class="image-preview" />
                 {/if}
               {/if}
             {:else}
@@ -393,11 +393,6 @@
     color: #005C4B;
   }
 
-  .input-group {
-    display: flex;
-    margin-bottom: 20px;
-  }
-
   input[type="file"] {
     flex-grow: 1;
     padding: 25px;
@@ -455,18 +450,6 @@
 
   .error {
     color: red;
-  }
-
-  .secondary {
-    background-color: transparent;
-    border: 2px solid #1c1c1c;
-    color: #1c1c1c;
-    border-radius: 5px;
-  }
-
-  footer {
-    font-size: 0.8em;
-    margin-top: 20px;
   }
 
   .modal-backdrop {
@@ -571,15 +554,6 @@
     margin: 0;
   }
 
-  .message-date {
-    font-size: 0.7em;
-    color: #999;
-    margin-top: 5px;
-    padding-left: 1em;
-    padding-right: 1em;
-    display: inline-block;
-  }
-
   .audio-message audio {
     width: 100%;
     border-radius: 20px;
@@ -603,40 +577,6 @@
     color: #666;
   }
 
-  .file-attachment {
-    display: flex;
-    align-items: center;
-  }
-
-  .file-icon {
-    width: 30px;
-    height: 30px;
-    margin-right: 10px;
-  }
-
-  .pdf-preview, .docx-preview {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .pdf-preview img, .docx-preview p {
-    width: calc(33% - 10px);
-    object-fit: cover;
-    border: 1px solid #ccc;
-    transition: transform 0.3s ease;
-  }
-
-  .pdf-preview:hover {
-    transform: scale(3.5);
-    z-index: 10;
-  }
-
-  .more-pages {
-    font-size: 24px;
-    font-weight: bold;
-  }
-
   .image-preview {
     width: 100px;
     height: auto;
@@ -646,31 +586,6 @@
   .image-preview:hover {
     transform: scale(3.5);
     z-index: 10;
-  }
-
-  .video-preview {
-    position: relative;
-  }
-
-  .video-preview img {
-    width: 100%;
-    height: auto;
-  }
-
-  .video-preview video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-
-  .edit-transcription {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    margin-left: 5px;
   }
 
   .thumbnail-pdf {
@@ -713,17 +628,6 @@
     border-left: 3px solid #ccc;
     margin: 10px 0;
     display: inline-block;
-  }
-
-  .debug {
-    border: 1px solid red !important;
-    background-color: rgba(255, 0, 0, 0.1) !important;
-  }
-
-  .icon img {
-    width: 24px;
-    height: auto;
-    vertical-align: middle;
   }
 
   .floating-button {
