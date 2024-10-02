@@ -6,6 +6,7 @@
   import { browser } from '$app/environment';
   import { io } from 'socket.io-client';
   import jsPDF from 'jspdf';
+  import Pre from '$lib/Pre.svelte'
 
   let fileInput;
   let result = null;
@@ -227,10 +228,10 @@
           {/each}
       </ul>
   {:else}
-    <div>
+    <div class="file-zip">
       <input type="file" bind:this={fileInput} accept=".zip" />
       <button on:click={handleSubmit} disabled={isLoading}>
-        {isLoading ? 'Processando...' : 'Send'}
+        {isLoading ? 'Processando...' : 'Enviar'}
       </button>
     </div>
   {/if}
@@ -308,28 +309,24 @@
     ele estará no formato .zip, confira como fazer:
   </p>
   <div class="platform-icons">
-    <a href="https://apps.apple.com/your-app" class="platform-icon">
+    <a href="https://faq.whatsapp.com/1180414079177245/?cms_platform=iphone&helpref=platform_switcher" class="platform-icon">
       <img src="/apple.png" alt="Apple icon" class="icon-image icon-apple" />
     </a>
-    <a href="https://play.google.com/store/your-app" class="platform-icon">
+    <a href="https://faq.whatsapp.com/1180414079177245/?helpref=uf_share" class="platform-icon">
       <img src="/android.png" alt="Android icon" class="icon-image icon-android" />
     </a>
   </div>
-
-  <div class="buttons">
+   <div class="buttons">
     <button class="secondary" on:click={toggleLimitacoesModal}>Limitações</button>
     <button class="secondary" on:click={toggleLGPDModal}>LGPD</button>
   </div>
-
-  <footer>
-    2024 por ProcStudio e Bruno Pellizzetti
-  </footer>
 
   {#if showPDFButton}
     <button class="floating-button" on:click={generatePDF}>
       Download PDF
     </button>
   {/if}
+  <Pre />
 </main>
 
 {#if showLimitacoesModal}
@@ -357,6 +354,9 @@
 {/if}
 
 <style>
+  *{
+    font-family: Arial, sans-serif;
+  }
   .spinner {
     border: 4px solid rgba(0, 0, 0, 0.1);
     width: 36px;
@@ -369,9 +369,7 @@
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
-
   main {
-    font-family: Arial, sans-serif;
     max-width: 600px;
     margin: 0 auto;
     padding: 20px;
@@ -382,16 +380,17 @@
   }
 
   h1 {
-    font-size: 2.5em;
+    font-size: 3.0em;
     margin-bottom: 10px;
     font-family: 'Alfa Slab One', system-ui;
+    font-weight:700;
     text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
     color: #005C4B;
   }
 
   .subtitle, .instructions {
     margin-bottom: 20px;
-    color: #019D80;
+    color: #005C4B;
   }
 
   .input-group {
@@ -401,25 +400,29 @@
 
   input[type="file"] {
     flex-grow: 1;
-    padding: 10px;
+    padding: 25px;
     border: none;
-    border-radius: 5px 0 0 5px;
+    border-radius: 5px;
     background-color: white;
+    font-size:16px;
   }
 
   button {
-    padding: 10px 20px;
+    padding: 18px 30px;
     border: none;
-    border-radius: 0 5px 5px 0;
+    border-radius: 5px;
     background-color: #1c1c1c;
     color: white;
     cursor: pointer;
+    font-size:15px;
   }
 
   .platform-icons {
     display: flex;
+    justify-content:center;
     gap: 1rem;
     align-items: center;
+    margin:15px;
   }
 
   .platform-icon {

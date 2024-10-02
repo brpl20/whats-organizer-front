@@ -4,48 +4,18 @@
     import { Youtube } from 'svelte-youtube-lite';
   </script>
   
-  <main>
-    <h1>WhatsOrganizer</h1>
-  
-    <p class="subtitle">
-      Organize suas conversas de WhatsApp<br>
-      e transcreva áudios de forma rápida e<br>
-      segura de uma única vez
-    </p>
-  
-    <h2>em breve...</h2>
-
+  <div class="divPre">
     <Youtube id="X_JlLlebbx0" />
-  
-    
+
     <footer>
-      2024 por ProcStudio e <a href="https://www.youtube.com/@brunopellizzetti" target="_blank">Bruno Pellizzetti</a>
+      2024 por <b> ProcStudio </b> e <b> <a href="https://www.youtube.com/@brunopellizzetti" target="_blank">Bruno Pellizzetti</a></b>
     </footer>
   
-  </main>
+  </div>
   
   
   
     <style>
-      main {
-        font-family: Arial, sans-serif;
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-        text-align: center;
-        background-color: #58F1C4;
-        color: #1c1c1c;
-        border-radius: 10px;
-      }
-    
-      h1 {
-        font-size: 2.5em;
-        margin-bottom: 10px;
-        font-family: 'Alfa Slab One', system-ui;
-        text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
-        color: #005C4B;
-      }
-    
       h2 {
         font-size: 1.5em;
         margin-bottom: 10px;
