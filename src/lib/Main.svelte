@@ -220,11 +220,13 @@
     segura de uma única vez
   </p>
   {#if isLoading}
+   <div class="spinner-container">
     <div class="spinner"></div>
     <h2>Processando...</h2>
+  </div>
       <ul>
           {#each socketMessages as smessage}
-              <li>{smessage}</li>
+              <li class="smessage-li">{smessage}</li>
           {/each}
       </ul>
   {:else}
@@ -358,15 +360,43 @@
     font-family: Arial, sans-serif;
     list-style-type: none;
   }
-  .spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border-left-color: #09f;
-    animation: spin 1s linear infinite;
-    margin:auto 0;
-  }
+.smessage-li{
+  text-align:center;
+}
+.spinner-container{
+  display: flex;
+  align-items: center; 
+  justify-content: center;
+  gap: 10px;
+  text-align:center;
+}
+.spinner{
+  width: 50px;
+  aspect-ratio: 1;
+  display: grid;
+  border: 4px solid #0000;
+  border-radius: 50%;
+  border-right-color: #005C4B;
+  animation: l15 1s infinite linear;
+}
+.spinner::before,
+.spinner::after {    
+  content: "";
+  grid-area: 1/1;
+  margin: 2px;
+  border: inherit;
+  border-radius: 50%;
+  animation: l15 2s infinite;
+}
+.spinner::after {
+  margin: 8px;
+  animation-duration: 3s;
+}
+@keyframes l15{ 
+  100%{transform: rotate(1turn)}
+}
+
+
 
   @keyframes spin {
     to { transform: rotate(360deg); }
