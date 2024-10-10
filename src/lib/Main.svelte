@@ -334,9 +334,9 @@
     <div class="modal" transition:fade on:click|stopPropagation>
       <h2>Limitações</h2>
       <ul>
-        <li>Grupos não suportados</li>
-        <li>Tamanho máximo dos arquivos: 40 Mb</li>
-        <li>Não confere garantia de autenticidade</li>
+        <li>- Grupos não suportados</li>
+        <li>- Tamanho máximo dos arquivos: 40 Mb</li>
+        <li>- Não confere garantia de autenticidade</li>
       </ul>
       <button on:click={toggleLimitacoesModal}>Fechar</button>
     </div>
@@ -356,6 +356,7 @@
 <style>
   *{
     font-family: Arial, sans-serif;
+    list-style-type: none;
   }
   .spinner {
     border: 4px solid rgba(0, 0, 0, 0.1);
@@ -364,6 +365,7 @@
     border-radius: 50%;
     border-left-color: #09f;
     animation: spin 1s linear infinite;
+    margin:auto 0;
   }
 
   @keyframes spin {
@@ -462,6 +464,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    color:#1c1c1c;
   }
 
   .modal {
@@ -470,6 +473,9 @@
     border-radius: 5px;
     max-width: 400px;
     text-align: left;
+    border-top: 3px solid;
+    border-image: linear-gradient(to right, #00F38D, #00B4F3) 1;
+    font-size:18px;
   }
 
   .modal h2 {
@@ -478,13 +484,15 @@
 
   .modal button {
     margin-top: 10px;
-    background-color: #00ffa6;
-    color: #1c1c1c;
     border-radius: 5px;
+    background-color:#00F38D;
+    color:#1c1c1c;
+    font-size: 15px;
   }
 
   .modal ul {
     padding-left: 20px;
+    list-style-type: none;
   }
 
   .chat-container {
@@ -634,12 +642,13 @@
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background-color: #007bff;
+    background-color: #1c1c1c;
     color: white;
     border: none;
-    border-radius: 50%;
-    padding: 15px;
+    border-radius: 5%;
+    padding: 25px;
     cursor: pointer;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    font-size:17px;
   }
 </style>
