@@ -1,0 +1,36 @@
+services:
+  svelte:
+    container_name: svelte
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    networks:
+      - whats-organizer_front
+
+  nginx:
+    restart: always
+    env_file:
+      - infra/server/.env
+      - .env
+    build:
+      context: ./infra/server
+    container_name: nginx-whats-organizer_front
+    ports:
+      - "443:443"
+      - "80:80"
+      - "5000:5000"
+    networks:
+      - whats-organizer_front
+    volumes:
+      - ./infra/server/templates:/etc/nginx/templates
+      - /etc/letsencrypt/live/${DOMAIN}/fullchain.pem:/etc/nginx/ssl/fullchain.pem
+      - /etc/letsencrypt/live/${DOMAIN}/privkey.pem:/etc/nginx/ssl/privkey.pem
+    depends_on:
+      - svelte
+
+networks:
+  whats-organizer_front:
