@@ -13,4 +13,11 @@ jobs:
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
-        script: whoami
+        script:
+          - if [ ! -d /root/whats-organizer-front ]; \
+              then mkdir /root/whats-organizer-front; \
+            fi
+          - cd /root/whats-organizer-front
+          - git clone https://github.com/${{ github.repository }} ./
+          - docker compose up --build
+          - docker system prune --volumes -a
