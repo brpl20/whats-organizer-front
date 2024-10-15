@@ -23,4 +23,5 @@ jobs:
           cp /root/envs/front/nginx.env ./infra/server/.env
           docker compose build
           docker compose up -d
-          docker system prune --volumes -a --force
+          docker image prune --force
+          docker container prune --force

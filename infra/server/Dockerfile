@@ -53,6 +53,3 @@ COPY .env /
 EXPOSE 443
 EXPOSE 80
 
-# Start command
-# CMD ["/run.sh"]
-

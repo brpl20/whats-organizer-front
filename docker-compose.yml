@@ -1,5 +1,6 @@
 services:
   svelte:
+    user: node:node
     container_name: svelte
     build:
       context: .
