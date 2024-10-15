@@ -13,10 +13,13 @@ jobs:
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
         script: |
-          if [ ! -d /root/whats-organizer-front ]; then
-            mkdir /root/whats-organizer-front;
+          if [ -d /root/whats-organizer-front ]; then
+            rm -r /root/whats-organizer-front
           fi
+          mkdir /root/whats-organizer-front
           cd /root/whats-organizer-front
           git clone https://github.com/${{ github.repository }} ./
+          cp /root/envs/front/.env .
+          cp /root/envs/front/nginx.env ./infra/server/.env
           docker compose up --build
-          docker system prune --volumes -a
+          docker system prune --volumes -a --force
