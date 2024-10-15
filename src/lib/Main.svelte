@@ -18,7 +18,7 @@
   let socketMessages = [];
   let showPDFButton = false;
 
-  const socket = io('http://localhost:5000');
+  const socket = io('http://216.238.117.64:5000/process');
 
   socket.on('Smessage', (data) => {
     socketMessages = [...socketMessages, data.data];
