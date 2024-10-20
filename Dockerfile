@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:21-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -31,4 +31,5 @@ WORKDIR /app
 COPY --chown=node:node --from=build /app/build /app/build
 COPY --chown=node:node --from=prod-deps /app/node_modules /app/node_modules
 EXPOSE 8000
-CMD ["node", "build/index"]
+# --env-file from https://kit.svelte.dev/docs/adapter-node#environment-variables
+CMD ["node", "--env-file=.env", "build/index"]
