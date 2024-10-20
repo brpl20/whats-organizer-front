@@ -18,9 +18,20 @@
   let socketMessages = [];
   let showPDFButton = false;
 
-  const socket = io('http://216.238.117.64:5000/process');
+  const socket = io('http://216.238.117.64:5000/process', {
+  reconnectionAttempts: 5
+  });
+
+  socket.on('connect', () => {
+    console.log('Connected');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Disconnected');
+  });
 
   socket.on('Smessage', (data) => {
+    console.log('Server message:', data);
     socketMessages = [...socketMessages, data.data];
   });
 
