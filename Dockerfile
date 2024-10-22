@@ -28,6 +28,7 @@ RUN apk update && apk upgrade
 USER node
 ENV NODE_ENV="production"
 WORKDIR /app
+COPY --chown=node:node .env .
 COPY --chown=node:node --from=build /app/build /app/build
 COPY --chown=node:node --from=prod-deps /app/node_modules /app/node_modules
 EXPOSE 8000
