@@ -1,5 +1,6 @@
 <script>
     import { onMount } from 'svelte';
+    import { PUBLIC_API_URL } from '$env/static/public';
   
     let fileInput;
     let result = null;
@@ -26,7 +27,7 @@
       formData.append('file', file);
   
       try {
-        const response = await fetch('http://localhost:5000/process', {
+        const response = await fetch(`${PUBLIC_API_URL}/process`, {
           method: 'POST',
           body: formData,
         });

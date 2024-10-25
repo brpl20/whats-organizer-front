@@ -7,6 +7,7 @@
   import { io } from 'socket.io-client';
   import jsPDF from 'jspdf';
   import Pre from '$lib/Pre.svelte'
+  import { PUBLIC_API_URL } from '$env/static/public';
 
   let fileInput;
   let result = null;
@@ -18,8 +19,8 @@
   let socketMessages = [];
   let showPDFButton = false;
 
-  const socket = io('http://216.238.117.64:5000/process', {
-  reconnectionAttempts: 5
+  const socket = io(`${PUBLIC_API_URL}/process`, {
+    reconnectionAttempts: 5,
   });
 
   socket.on('connect', () => {
@@ -149,7 +150,7 @@
     formData.append('file', file);
 
     try {
-      const response = await fetch('http://localhost:5000/process', {
+      const response = await fetch(`${process.env.PUBLIC_API_URL}/process`, {
         method: 'POST',
         body: formData,
       });
