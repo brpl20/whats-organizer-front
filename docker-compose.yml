@@ -11,6 +11,7 @@ services:
       - "8000:8000"
     networks:
       - whats-organizer_front
+    restart: always
 
   nginx:
     restart: always
@@ -34,3 +35,5 @@ services:
 
 networks:
   whats-organizer_front:
+  proxynet:
+    name: integration-nginx
