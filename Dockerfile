@@ -23,7 +23,7 @@ COPY --chown=node:node . .
 RUN pnpm run build
 RUN cp package.json build/
 
-FROM node:20-alpine AS prod
+FROM node:21-alpine AS prod
 RUN apk update && apk upgrade
 USER node
 ENV NODE_ENV="production"
