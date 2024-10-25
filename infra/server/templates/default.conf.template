@@ -9,6 +9,7 @@ server {
 	http2 on;
 
     server_name ${NGINX_HOST};
+    server_name www.${NGINX_HOST}
     server_tokens off;
     gzip on;
     gzip_proxied any;
