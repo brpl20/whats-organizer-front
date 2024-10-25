@@ -151,7 +151,7 @@
     formData.append('file', file);
 
     try {
-      const response = await fetch(`${process.env.PUBLIC_API_URL}/process`, {
+      const response = await fetch(`${PUBLIC_API_URL}/process`, {
         method: 'POST',
         body: formData,
       });
