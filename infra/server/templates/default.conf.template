@@ -18,4 +18,8 @@ server {
     location / {
         proxy_pass http://${UPSTREAM}_upstream;
     }
+    
+    if ($host !~* ^(${NGINX_HOST})$) {
+        return 444;
+    }
 }
