@@ -12,6 +12,10 @@ const config = {
       // Busts cache for cloudflare, nginx, browser, etc on each build
       name: randomUUID({  disableEntropyCache: true }),
     },
+    // Desabilita proteção de CSRF para o backend
+    csrf: {
+      checkOrigin: false,
+    },
   }
 };
 
