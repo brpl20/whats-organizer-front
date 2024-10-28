@@ -21,7 +21,7 @@
 
   const socket = io(`${PUBLIC_API_URL}/process`, {
     reconnectionAttempts: 5,
-    transports: ['websocket', 'polling'],
+    transports: ['websocket', 'polling', 'webtransport'],
   });
 
   socket.on('connect', () => {
