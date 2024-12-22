@@ -76,12 +76,14 @@
 		}
 	}
 
+	/** @param {string} filename */
 	function getFileType(filename) {
 		const ext = filename.split('.').pop().toLowerCase();
 		switch (ext) {
 			case 'pdf':
 				return 'application/pdf';
 			case 'docx':
+			case 'docm': // docx + macros enabled
 				return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 			case 'jpg':
 			case 'jpeg':
@@ -239,7 +241,13 @@
 			isLoading = false;
 		}
 	}
+
 	async function generatePDF() {
+		if (!chatContainer) {
+			console.error('Chat container not found');
+			return
+		}
+
 		jsPDF ??= (await import('jspdf')).default;	
 		
 		const doc = jsPDF({
@@ -248,33 +256,33 @@
 			format: [595, 842] // A4 Size
 		});
 
-		if (chatContainer) {
-			doc.html(chatContainer, {
-				callback: function (doc) {
-					doc.save('chat.pdf');
-				},
-				x: 10,
-				y: 10,
-				html2canvas: {
-					scale: 0.5,
-				},
-			});
-		} else {
-			console.error('Chat container not found');
-		}
+		doc.html(chatContainer, {
+			callback: function (doc) {
+				doc.save('chat.pdf');
+			},
+			x: 10,
+			y: 10,
+			html2canvas: {
+				scale: 0.5,
+			},
+		});
 	}
 
-	function isAudioFile(filename) {
-		return filename && filename.endsWith('.opus');
-	}
+	/**
+	 * @param {string} filename
+	 * @param {string} ext
+	 * @returns {boolean}
+	 */
+	const isFile = (filename, ext) => filename?.endsWith?.(`.${ext}`)
 
-	function isVideoFile(filename) {
-		return filename && filename.endsWith('.mp4');
-	}
+	/** @param {string} filename */
+	const isAudioFile = (filename) => isFile(filename, 'opus')
 
-	function getFileName(path) {
-		return path.split('/').pop();
-	}
+	/** @param {string} filename */
+	const isVideoFile = (filename) => isFile(filename, 'mp4')
+
+	/** @param {string} path */
+	const getFileName = (path) => path.split('/').pop()
 
 
 </script>
@@ -411,7 +419,7 @@
 		tabindex="0" 
 		aria-label="Fechar modal de limitações" 
 		on:click={toggleLimitacoesModal} 
-		on:keydown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') toggleLimitacoesModal(); }}>
+		on:keydown={(e) => toggleLimitacoesModal()}>
 		<div class="modal" transition:fade>
 			<h2>Limitações</h2>
 			<ul>
@@ -430,7 +438,7 @@
 		tabindex="0" 
 		aria-label="Fechar modal de LGPD" 
 		on:click={toggleLGPDModal} 
-		on:keydown={(e) => { toggleLGPDModal(); }}>
+		on:keydown={(e) => toggleLGPDModal()}>
 		<div class="modal" transition:fade>
 			<h2>LGPD</h2>
 			<p>
