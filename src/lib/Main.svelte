@@ -1,22 +1,19 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import JSZip from 'jszip';
-	import mammoth from 'mammoth';
 	import { browser } from '$app/environment';
-	import { io } from 'socket.io-client';
-	import jsPDF from 'jspdf';
 	import Pre from '$lib/Pre.svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import UploadButton from './UploadButton.svelte';
 
-	let fileInput;
 	let result = null;
 	let isLoading = false;
+	/** @type {string=}*/
 	let error = null;
 	let showLimitacoesModal = false;
 	let showLGPDModal = false;
 	let messages = [];
+	/** @type {string[]} */
 	let socketMessages = [];
 	let showPDFButton = false;
 
@@ -29,6 +26,7 @@
 	}
 
 	async function processZipFile(file) {
+		const JSZip = (await import('jszip')).default
 		const zip = new JSZip();
 		const contents = await zip.loadAsync(file);
 
@@ -95,6 +93,7 @@
 
 	async function getDocxInfo(blob) {
 		const arrayBuffer = await blob.arrayBuffer();
+		const mammoth = (await import('mammoth')).default
 		const result = await mammoth.convertToHtml({ arrayBuffer });
 		const text = result.value;
 		const pages = text.split('\n\n').slice(0, 6);
@@ -124,12 +123,29 @@
 		});
 	}
 
+	async function connectSocket() {
+		const io = (await import('socket.io-client')).default
+		const socket = io(PUBLIC_API_URL, {
+				reconnectionAttempts: 5,
+				transports: ['websocket', 'polling', 'webtransport']
+			});
+
+			await new Promise((resolve, _) => socket.on('connect', resolve))
+
+			socket.on('Smessage', (data) => {
+				console.log('Server message:', data);
+				socketMessages = [...socketMessages, data.data];
+			});
+	}
+
 	/** @param {SubmitEvent} ev */
 	async function handleSubmit(ev) {
 		ev.preventDefault();
 		const elements = /** @type {HTMLFormControlsCollection} */(ev.target.elements)
 		const fileInput = elements[1]
 		const files = /** @type {FileList} */(fileInput.files)
+
+		await connectSocket()
 
 		if (!files?.length) {
 			error = 'Por favor selecione um arquivo zip antes.';
@@ -175,7 +191,8 @@
 		}
 	}
 
-	function generatePDF() {
+	async function generatePDF() {
+		jsPDF = (await import('jspdf')).default
 		const doc = new jsPDF({
 			orientation: 'portrait',
 			unit: 'px',
@@ -212,27 +229,7 @@
 		return path.split('/').pop();
 	}
 
-	onMount(() => {
-		if (browser) {
-			const socket = io(PUBLIC_API_URL, {
-				reconnectionAttempts: 5,
-				transports: ['websocket', 'polling', 'webtransport']
-			});
 
-			socket.on('connect', () => {
-				console.log('Connected');
-			});
-
-			socket.on('disconnect', () => {
-				console.log('Disconnected');
-			});
-
-			socket.on('Smessage', (data) => {
-				console.log('Server message:', data);
-				socketMessages = [...socketMessages, data.data];
-			});
-		}
-	});
 </script>
 
 <svelte:head>
