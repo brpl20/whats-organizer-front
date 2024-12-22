@@ -256,8 +256,8 @@
 				x: 10,
 				y: 10,
 				html2canvas: {
-					scale: 0.5
-				}
+					scale: 0.5,
+				},
 			});
 		} else {
 			console.error('Chat container not found');
@@ -514,15 +514,6 @@
 		color: #005c4b;
 	}
 
-	input[type='file'] {
-		flex-grow: 1;
-		padding: 25px;
-		border: none;
-		border-radius: 5px;
-		background-color: white;
-		font-size: 16px;
-	}
-
 	button {
 		padding: 18px 30px;
 		border: none;
@@ -599,14 +590,6 @@
 
 	.modal h2 {
 		margin-top: 0;
-	}
-
-	.modal button {
-		margin-top: 10px;
-		border-radius: 5px;
-		background-color: #00f38d;
-		color: #1c1c1c;
-		font-size: 15px;
 	}
 
 	.modal ul {
