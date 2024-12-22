@@ -8,6 +8,7 @@
 	import jsPDF from 'jspdf';
 	import Pre from '$lib/Pre.svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
+	import UploadButton from './UploadButton.svelte';
 
 	let fileInput;
 	let result = null;
@@ -123,13 +124,19 @@
 		});
 	}
 
-	async function handleSubmit() {
-		if (!fileInput.files[0]) {
+	/** @param {SubmitEvent} ev */
+	async function handleSubmit(ev) {
+		ev.preventDefault();
+		const elements = /** @type {HTMLFormControlsCollection} */(ev.target.elements)
+		const fileInput = elements[1]
+		const files = /** @type {FileList} */(fileInput.files)
+
+		if (!files?.length) {
 			error = 'Por favor selecione um arquivo zip antes.';
 			return;
 		}
 
-		const file = fileInput.files[0];
+		const file = files[0];
 		if (!file.name.endsWith('.zip')) {
 			error = 'Please select a ZIP file.';
 			return;
@@ -155,11 +162,11 @@
 			result = await response.json();
 			if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
 				error = result[0].ERRO;
-			} else {
-				messages = result;
-				await processZipFile(file);
-				showPDFButton = true; // Show the PDF button after processing
-			}
+				return
+			} // else
+			messages = result;
+			await processZipFile(file);
+			showPDFButton = true;
 		} catch (e) {
 			console.error('Houve um erro ao processar o arquivo:', e);
 			error = 'Houve um erro ao processar o arquivo. Por favor tente .';
@@ -250,14 +257,13 @@
 				<li class="smessage-li">{smessage}</li>
 			{/each}
 		</ul>
-	{:else}
-		<div class="file-zip">
-			<input type="file" bind:this={fileInput} accept=".zip" />
-			<button on:click={handleSubmit} disabled={isLoading}>
+	{/if}
+		<form class="file-zip" on:submit={handleSubmit}>
+			<UploadButton />
+			<button type="submit" disabled={isLoading}>
 				{isLoading ? 'Processando...' : 'Enviar'}
 			</button>
-		</div>
-	{/if}
+		</form>
 
 	{#if error}
 		<p class="error">{error}</p>
@@ -282,7 +288,7 @@
 												<div class="thumbnail-container">
 													<img
 														src={link}
-														alt="PDF as Image"
+														alt="PDF"
 														class="thumbnail-pdf {message.links[index + 1] === 'landscape'
 															? 'landscape'
 															: 'portrait'}"
@@ -313,12 +319,14 @@
 								{/if}
 
 								{#if message.FileAttached.toLowerCase().includes('.mp4')}
-									<video controls src={message.FileURL}></video>
+									<video controls src={message.FileURL}>
+										<track kind="captions" />
+									</video>
 								{/if}
 
 								{#if message.FileAttached.toLowerCase().includes('.jpg') || message.FileAttached.toLowerCase().includes('.jpeg') || message.FileAttached.toLowerCase().includes('.png')}
 									<div class="filename">{getFileName(message.FileAttached)}</div>
-									<img src={message.FileURL} alt="Image file" class="image-preview" />
+									<img src={message.FileURL} alt="Mídia na Conversa" class="image-preview" />
 								{/if}
 							{/if}
 						{:else}
