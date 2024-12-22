@@ -7,7 +7,7 @@
 
 	const socketConnTimeout = 5000
 
-	/** @type {HTMLDivElement}*/
+	/** @type {HTMLDivElement=}*/
 	let chatContainer = null;
 	/**
 	 * @typedef {object} ApiResult
@@ -405,28 +405,38 @@
 </main>
 
 {#if showLimitacoesModal}
-	<div class="modal-backdrop" on:click={toggleLimitacoesModal}>
-		<div class="modal" transition:fade on:click|stopPropagation>
+	<div 
+		class="modal-backdrop" 
+		role="button" 
+		tabindex="0" 
+		aria-label="Fechar modal de limitações" 
+		on:click={toggleLimitacoesModal} 
+		on:keydown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') toggleLimitacoesModal(); }}>
+		<div class="modal" transition:fade>
 			<h2>Limitações</h2>
 			<ul>
 				<li>- Grupos não suportados</li>
 				<li>- Tamanho máximo dos arquivos: 40 Mb</li>
 				<li>- Não confere garantia de autenticidade</li>
 			</ul>
-			<button on:click={toggleLimitacoesModal}>Fechar</button>
 		</div>
 	</div>
 {/if}
 
 {#if showLGPDModal}
-	<div class="modal-backdrop" on:click={toggleLGPDModal}>
-		<div class="modal" transition:fade on:click|stopPropagation>
+	<div 
+		class="modal-backdrop" 
+		role="button" 
+		tabindex="0" 
+		aria-label="Fechar modal de LGPD" 
+		on:click={toggleLGPDModal} 
+		on:keydown={(e) => { toggleLGPDModal(); }}>
+		<div class="modal" transition:fade>
 			<h2>LGPD</h2>
 			<p>
 				Não coletamos nenhum dado e todos os arquivos são totalmente destruídos após as etapas do
 				organizador serem concluídas.
 			</p>
-			<button on:click={toggleLGPDModal}>Fechar</button>
 		</div>
 	</div>
 {/if}
