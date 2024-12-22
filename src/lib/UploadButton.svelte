@@ -68,6 +68,19 @@
         border-width: .5px;
     }
 
+    @media (hover: none) {
+        .drop-area:is(.dragging,:active,:focus) {
+            box-shadow: 0 0 5px #aaa;
+            border-style: inset;
+            border-width: .5px;
+        }
+
+        .drop-area:is(.dragging,:active,:focus) line {
+            stroke-dashoffset: 0;
+        }
+
+    }
+
     .box-animation {
         width: 100%;
         height: 100%;
@@ -86,7 +99,7 @@
         transition: stroke-dashoffset 1.4s linear;
     }
 
-    .drop-area:is(.dragging, :hover) line {
+    .drop-area:is(.dragging,:hover) line {
         stroke-dashoffset: 0;
     }
 
