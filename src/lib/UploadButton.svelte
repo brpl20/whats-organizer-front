@@ -155,9 +155,9 @@
         <span class="underline">Clique para fazer Upload</span>
         <svg class="box-animation" viewBox={`0 0 100 ${svgY}`} preserveAspectRatio="none">
             <line  x1="0" y1="0" x2="100" y2="0" />
-            <line  x1="100" y1="0" x2="100" y2="100" />
+            <line  x1="100" y1="0" x2="100" y2={`${svgY}`} />
             <line  x1="100" y1={`${svgY}`} x2="0" y2={`${svgY}`} />
-            <line  x1="0" y1="100" x2="0" y2="0" />
+            <line  x1="0" y1={`${svgY}`} x2="0" y2="0" />
         </svg>
         
         {#if files.length > 0}
