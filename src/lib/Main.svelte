@@ -124,6 +124,7 @@
 	}
 
 	async function connectSocket() {
+		socketMessages = []
 		const io = (await import('socket.io-client')).default
 		const socket = io(PUBLIC_API_URL, {
 				reconnectionAttempts: 5,
