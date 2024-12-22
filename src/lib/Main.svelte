@@ -232,10 +232,6 @@
 
 </script>
 
-<svelte:head>
-	<title>WhatsOrganizer</title>
-</svelte:head>
-
 <main>
 	<h1>WhatsOrganizer</h1>
 
