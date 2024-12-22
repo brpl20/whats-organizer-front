@@ -1,11 +1,25 @@
 <script>
-	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { browser } from '$app/environment';
 	import Pre from '$lib/Pre.svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import UploadButton from './UploadButton.svelte';
+	import {onMount} from 'svelte'
 
+	const socketConnTimeout = 5000
+
+	/** @type {HTMLDivElement}*/
+	let chatContainer = null;
+	/**
+	 * @typedef {object} ApiResult
+  	 * @property {string} Date
+  	 * @property {string|false} FileAttached
+  	 * @property {number} ID
+  	 * @property {string} Message
+  	 * @property {string} Name
+  	 * @property {string} Time
+	 * @property {string=} ERRO
+	 */
+	/** @type {ApiResult[]=} */
 	let result = null;
 	let isLoading = false;
 	/** @type {string=}*/
@@ -17,6 +31,21 @@
 	let socketMessages = [];
 	let showPDFButton = false;
 
+	/** Optimize import on-demand for heavy libs */
+	/** @type {import('jszip')=} */
+	let JSZip = null
+	/** @type {import('mammoth')=} */
+	let mammoth = null
+	/** @type {import('socket.io-client').default=}*/
+	let io = null
+	/** @type {import('jspdf').default=} */
+	let jsPDF = null
+
+	/** @type {import('socket.io-client').Socket<DefaultEventsMap, DefaultEventsMap>=}*/
+	let socket = null;
+
+	onMount(() => () => socket?.disconnect?.())
+
 	function toggleLimitacoesModal() {
 		showLimitacoesModal = !showLimitacoesModal;
 	}
@@ -26,7 +55,7 @@
 	}
 
 	async function processZipFile(file) {
-		const JSZip = (await import('jszip')).default
+		JSZip ??= ((await import('jszip')).default)
 		const zip = new JSZip();
 		const contents = await zip.loadAsync(file);
 
@@ -93,9 +122,9 @@
 
 	async function getDocxInfo(blob) {
 		const arrayBuffer = await blob.arrayBuffer();
-		const mammoth = (await import('mammoth')).default
-		const result = await mammoth.convertToHtml({ arrayBuffer });
-		const text = result.value;
+		mammoth ??= (await import('mammoth'))
+		const htmlResult = await mammoth.convertToHtml({ arrayBuffer });
+		const text = htmlResult.value;
 		const pages = text.split('\n\n').slice(0, 6);
 		return { type: 'docx', pages };
 	}
@@ -125,18 +154,35 @@
 
 	async function connectSocket() {
 		socketMessages = []
-		const io = (await import('socket.io-client')).default
-		const socket = io(PUBLIC_API_URL, {
-				reconnectionAttempts: 5,
-				transports: ['websocket', 'polling', 'webtransport']
-			});
+		if (socket) return;
 
-			await new Promise((resolve, _) => socket.on('connect', resolve))
+		io ??= (await import('socket.io-client')).default
+		socket ??= io(PUBLIC_API_URL, {
+			reconnectionAttempts: 5,
+			transports: ['websocket', 'polling', 'webtransport'],
+			timeout: socketConnTimeout,
+		});
 
-			socket.on('Smessage', (data) => {
-				console.log('Server message:', data);
-				socketMessages = [...socketMessages, data.data];
-			});
+		/** @type {Promise<void>} */
+		const connect = new Promise((resolve, _) => (
+			socket.on('connect', resolve))
+		)
+		/** @type {Promise<void>} */
+		const timeout = new Promise((_, reject) => setTimeout(() => (
+			reject(new Error('Connection timed out'))
+		), socketConnTimeout));
+
+		try {
+			Promise.race([connect, timeout])
+		} catch {
+			socketMessages = ["Carregando..."]
+		}
+
+		socket.on('Smessage', (data) => {
+			console.log('Server message:', data);
+			if (!(data?.data)) return;
+			socketMessages = [...socketMessages, data.data];
+		});
 	}
 
 	/** @param {SubmitEvent} ev */
@@ -146,7 +192,6 @@
 		const fileInput = elements[1]
 		const files = /** @type {FileList} */(fileInput.files)
 
-		await connectSocket()
 
 		if (!files?.length) {
 			error = 'Por favor selecione um arquivo zip antes.';
@@ -159,9 +204,12 @@
 			return;
 		}
 
+
 		error = null;
 		isLoading = true;
 		result = null;
+
+		await connectSocket()
 
 		const formData = new FormData();
 		formData.append('file', file);
@@ -186,21 +234,19 @@
 			showPDFButton = true;
 		} catch (e) {
 			console.error('Houve um erro ao processar o arquivo:', e);
-			error = 'Houve um erro ao processar o arquivo. Por favor tente .';
+			error = 'Houve um erro ao processar o arquivo. Por favor Tente Novamente.';
 		} finally {
 			isLoading = false;
 		}
 	}
-
 	async function generatePDF() {
-		jsPDF = (await import('jspdf')).default
-		const doc = new jsPDF({
+		jsPDF ??= (await import('jspdf')).default;	
+		
+		const doc = jsPDF({
 			orientation: 'portrait',
 			unit: 'px',
 			format: [595, 842] // A4 Size
 		});
-
-		const chatContainer = document.querySelector('.chat-container');
 
 		if (chatContainer) {
 			doc.html(chatContainer, {
@@ -210,7 +256,7 @@
 				x: 10,
 				y: 10,
 				html2canvas: {
-					scale: 0.5 // scale
+					scale: 0.5
 				}
 			});
 		} else {
@@ -264,7 +310,7 @@
 	{/if}
 
 	{#if messages.length > 0}
-		<div class="chat-container">
+		<div class="chat-container" bind:this={chatContainer}>
 			{#each messages as message}
 				<div class="message-wrapper {message.ID === 1 ? 'left' : 'right'}">
 					<div class="message-bubble">
