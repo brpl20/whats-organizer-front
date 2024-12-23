@@ -296,6 +296,11 @@
     }
 }
 
+/** @param {SubmitEvent} ev */
+const handleMessageInjection = (ev) => {
+	if (ev.target.value) message = ev.target.value;
+}
+
 
 	/**
 	 * @param {string} filename
@@ -350,8 +355,9 @@
 	<p class="error">{error}</p>
 {/if}
 
+	<input data-testid="playwright-inject-chat" on:keydown={(e) => e.key === 'Enter' && handleMessageInjection(e)} />
 	{#if messages.length > 0}
-		<div class="chat-container" bind:this={chatContainer}>
+		<div class="chat-container" data-testid="playwright-chat" bind:this={chatContainer}>
 			{#each messages as message}
 				<div class="message-wrapper {message.ID === 1 ? 'left' : 'right'}">
 					<div class="message-bubble">
@@ -498,6 +504,10 @@
 		.message-bubble {
 			break-inside: avoid;
 		}
+	}
+
+	[data-testid="playwright-inject-chat"] {
+		display: none;
 	}
 
 	* {
