@@ -3,7 +3,9 @@
 	import Pre from '$lib/Pre.svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import UploadButton from './UploadButton.svelte';
-	import {onMount} from 'svelte'
+	import {onDestroy} from 'svelte'
+	import Video from './ChatComponents/Video.svelte';
+	import { browser } from '$app/environment';
 
 	const socketConnTimeout = 5000
 
@@ -24,12 +26,16 @@
 	let isLoading = false;
 	/** @type {string=}*/
 	let error = null;
+	/** @type {string=}*/
+	let printError = null;
 	let showLimitacoesModal = false;
 	let showLGPDModal = false;
 	let messages = [];
 	/** @type {string[]} */
 	let socketMessages = [];
 	let showPDFButton = false;
+
+	$: if (browser && !messages.length) messages = window.messages ?? []
 
 	/** Optimize import on-demand for heavy libs */
 	/** @type {import('jszip')=} */
@@ -40,19 +46,17 @@
 	let io = null
 	/** @type {import('jspdf').default=} */
 	let jsPDF = null
+	/** @type {import('html2canvas')=} */
+	let html2canvas = null;
 
 	/** @type {import('socket.io-client').Socket<DefaultEventsMap, DefaultEventsMap>=}*/
 	let socket = null;
 
-	onMount(() => () => socket?.disconnect?.())
+	onDestroy(() => socket?.disconnect?.())
 
-	function toggleLimitacoesModal() {
-		showLimitacoesModal = !showLimitacoesModal;
-	}
+	const toggleLimitacoesModal = () => showLimitacoesModal = !showLimitacoesModal;
 
-	function toggleLGPDModal() {
-		showLGPDModal = !showLGPDModal;
-	}
+	const toggleLGPDModal = () => showLGPDModal = !showLGPDModal;
 
 	async function processZipFile(file) {
 		JSZip ??= ((await import('jszip')).default)
@@ -101,6 +105,9 @@
 		}
 	}
 
+	/**
+	 * @param {string} filename
+	 */
 	async function getFileInfo(blob, filename) {
 		const ext = filename.split('.').pop().toLowerCase();
 		switch (ext) {
@@ -176,8 +183,9 @@
 
 		try {
 			Promise.race([connect, timeout])
-		} catch {
+		} catch (e) {
 			socketMessages = ["Carregando..."]
+			console.error(e)
 		}
 
 		socket.on('Smessage', (data) => {
@@ -191,7 +199,7 @@
 	async function handleSubmit(ev) {
 		ev.preventDefault();
 		const elements = /** @type {HTMLFormControlsCollection} */(ev.target.elements)
-		const fileInput = elements[1]
+		const fileInput = elements?.[1]
 		const files = /** @type {FileList} */(fileInput.files)
 
 
@@ -208,6 +216,7 @@
 
 
 		error = null;
+		printError = null
 		isLoading = true;
 		result = null;
 
@@ -243,29 +252,14 @@
 	}
 
 	async function generatePDF() {
+		printError = null
 		if (!chatContainer) {
 			console.error('Chat container not found');
+			printError = 'Não há chat para imprimir'
 			return
 		}
 
-		jsPDF ??= (await import('jspdf')).default;	
-		
-		const doc = jsPDF({
-			orientation: 'portrait',
-			unit: 'px',
-			format: [595, 842] // A4 Size
-		});
-
-		doc.html(chatContainer, {
-			callback: function (doc) {
-				doc.save('chat.pdf');
-			},
-			x: 10,
-			y: 10,
-			html2canvas: {
-				scale: 0.5,
-			},
-		});
+		print();
 	}
 
 	/**
@@ -317,6 +311,10 @@
 		<p class="error">{error}</p>
 	{/if}
 
+	{#if printError}
+	<p class="error">{error}</p>
+{/if}
+
 	{#if messages.length > 0}
 		<div class="chat-container" bind:this={chatContainer}>
 			{#each messages as message}
@@ -367,9 +365,7 @@
 								{/if}
 
 								{#if message.FileAttached.toLowerCase().includes('.mp4')}
-									<video controls src={message.FileURL}>
-										<track kind="captions" />
-									</video>
+									<Video fileURL={message.FileURL} />
 								{/if}
 
 								{#if message.FileAttached.toLowerCase().includes('.jpg') || message.FileAttached.toLowerCase().includes('.jpeg') || message.FileAttached.toLowerCase().includes('.png')}
@@ -450,6 +446,25 @@
 {/if}
 
 <style>
+	@media print {
+		@page {
+            size: A4;
+            margin: 1cm;
+        }
+
+		main>:not(.chat-container) {
+			display: none !important;
+		}
+
+		main {
+			background-color: unset !important;
+		}
+
+		.message-bubble {
+			break-inside: avoid;
+		}
+	}
+
 	* {
 		font-family: Arial, sans-serif;
 		list-style-type: none;
@@ -634,13 +649,6 @@
 		border-radius: 10px;
 		background-color: white;
 		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-	}
-
-	.message-bubble video {
-		max-width: 100%;
-		height: auto;
-		display: block;
-		overflow: hidden;
 	}
 
 	.left .message-bubble {

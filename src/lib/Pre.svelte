@@ -20,5 +20,11 @@
         font-size: 0.8em;
         margin-top: 20px;
       }
+
+      @media print {
+		    * {
+		    	display: none !important;
+		    }
+	    }
     </style>
   

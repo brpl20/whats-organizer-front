@@ -37,7 +37,6 @@
 	"dependencies": {
 		"@fontsource/alfa-slab-one": "^5.0.20",
 		"amplify-adapter": "^0.1.2",
-		"jspdf": "^2.5.2",
 		"jszip": "^3.10.1",
 		"lamejs": "^1.2.1",
 		"mammoth": "^1.8.0",
