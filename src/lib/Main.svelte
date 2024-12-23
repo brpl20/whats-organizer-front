@@ -240,6 +240,10 @@
 				error = result[0].ERRO;
 				return
 			} // else
+			if (!Array.isArray(result) && result.Erro) {
+        	  error = result.Erro
+        	  return
+        	}
 			messages = result;
 			await processZipFile(file);
 			showPDFButton = true;
@@ -252,15 +256,46 @@
 	}
 
 	async function generatePDF() {
-		printError = null
-		if (!chatContainer) {
-			console.error('Chat container not found');
-			printError = 'Não há chat para imprimir'
-			return
-		}
+    let printError = null;
 
-		print();
-	}
+    if (!chatContainer) {
+        console.error('Chat container not found');
+        printError = 'Não há chat para imprimir';
+        return;
+    }
+
+    try {
+        const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ messages }),
+        });
+
+        if (!response.ok) {
+            printError = 'Erro ao gerar o PDF';
+            console.error(printError, await response.text());
+            return;
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'chat.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        printError = 'Erro ao conectar ao servidor';
+        console.error(printError, error);
+    }
+}
+
 
 	/**
 	 * @param {string} filename
