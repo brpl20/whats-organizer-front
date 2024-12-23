@@ -682,7 +682,7 @@ const handleMessageInjection = (ev) => {
 	.message-wrapper {
 		display: flex;
 		flex-direction: column;
-		margin-bottom: 10px;
+		margin: 8px 0;
 	}
 
 	.left {
