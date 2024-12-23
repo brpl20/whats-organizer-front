@@ -298,7 +298,8 @@
 
 /** @param {SubmitEvent} ev */
 const handleMessageInjection = (ev) => {
-	if (ev.target.value) message = ev.target.value;
+	if (!ev.target.value) return;
+	messages = JSON.parse(ev.target.value);
 }
 
 
