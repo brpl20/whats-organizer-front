@@ -504,6 +504,10 @@ const handleMessageInjection = (ev) => {
 		.message-bubble {
 			break-inside: avoid;
 		}
+
+		[data-testid="playwright-inject-chat"] {
+			display: none !important;
+		}
 	}
 
 	[data-testid="playwright-inject-chat"] {
