@@ -31,19 +31,19 @@
 	let showLimitacoesModal = false;
 	let showLGPDModal = false;
 	/**
- 	 * @typedef {object} Message
+	 * @typedef {object} Message
 	 * @property {string} Date
-  	 * @property {string|false} FileAttached
-  	 * @property {number} ID
-  	 * @property {string} Message
-  	 * @property {string} Name
-  	 * @property {string} Time
-  	 * @property {string=} FileURL
-  	 * @property {string=} type
-  	 * @property {number=} width
-  	 * @property {number=} height
-  	 * @property {number=} duration
-  	 * @property {string=} thumbnail
+	 * @property {string|false} FileAttached
+	 * @property {number} ID
+	 * @property {string} Message
+	 * @property {string} Name
+	 * @property {string} Time
+	 * @property {string=} FileURL
+	 * @property {string=} type
+	 * @property {number=} width
+	 * @property {number=} height
+	 * @property {number=} duration
+	 * @property {string=} thumbnail
 	 */
 	/** @type {Message[]} */
 	let messages = [];
@@ -53,7 +53,7 @@
 	/** @type {FileList=} */
 	let files = null;
 	/** @param {CustomEvent<FileList>} event */
-	const updateFiles = (event) =>files = event.detail;
+	const updateFiles = (event) => (files = event.detail);
 
 	/** Optimize import on-demand for heavy libs */
 	/** @type {import('jszip')=} */
@@ -73,7 +73,7 @@
 	const toggleLGPDModal = () => (showLGPDModal = !showLGPDModal);
 
 	async function processZipFile(file) {
-		console.log(file)
+		console.log(file);
 		JSZip ??= (await import('jszip')).default;
 		const zip = new JSZip();
 		const contents = await zip.loadAsync(file);
@@ -95,9 +95,11 @@
 		}
 	}
 
+	const getExt = (/** @type {string} */ filename) => filename.split('.').pop().toLowerCase();
+
 	/** @param {string} filename */
 	function getFileType(filename) {
-		const ext = filename.split('.').pop().toLowerCase();
+		const ext = getExt(filename);
 		switch (ext) {
 			case 'pdf':
 				return 'application/pdf';
@@ -124,7 +126,7 @@
 	 * @param {string} filename
 	 */
 	async function getFileInfo(blob, filename) {
-		const ext = filename.split('.').pop().toLowerCase();
+		const ext = getExt(filename);
 		switch (ext) {
 			case 'pdf':
 				return { type: 'pdf' };
@@ -137,7 +139,6 @@
 			case 'gif':
 				return await getImageInfo(blob);
 			case 'mp4':
-				console.log('mp4')
 				return await getVideoInfo(blob);
 			case 'opus':
 				return { type: 'audio' };
@@ -155,12 +156,13 @@
 		return { type: 'docx', pages };
 	}
 
-	const blobToBase64Url = async(blob) => new Promise((resolve, reject) => {
-		const reader = new FileReader()
-		reader.onload = (_) => resolve(reader.result)
-		reader.onerror = (e) => reject(e)
-		reader.readAsDataURL(blob) 
-	})
+	const blobToBase64Url = async (blob) =>
+		new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = (_) => resolve(reader.result);
+			reader.onerror = (e) => reject(e);
+			reader.readAsDataURL(blob);
+		});
 
 	const getImageInfo = async (blob) =>
 		new Promise((resolve) => {
@@ -269,47 +271,46 @@
 	}
 
 	async function generatePDF() {
-    let printError = null;
+		let printError = null;
 
-    if (!chatContainer) {
-        console.error('Chat container not found');
-        printError = 'Não há chat para imprimir';
-        return;
-    }
+		if (!chatContainer) {
+			console.error('Chat container not found');
+			printError = 'Não há chat para imprimir';
+			return;
+		}
 
-    try {
-        const formData = new FormData();
-        formData.append('messages', JSON.stringify(messages));
-        formData.append('file', files[0]);
+		try {
+			const formData = new FormData();
+			formData.append('messages', JSON.stringify(messages));
+			formData.append('file', files[0]);
 
-        const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
-            method: 'POST',
-            body: formData
-        });
+			const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
+				method: 'POST',
+				body: formData
+			});
 
-        if (!response.ok) {
-            printError = 'Erro ao gerar o PDF';
-            console.error(printError, await response.text());
-            return;
-        }
+			if (!response.ok) {
+				printError = 'Erro ao gerar o PDF';
+				console.error(printError, await response.text());
+				return;
+			}
 
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
 
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'chat.pdf';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'chat.pdf';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
 
-        URL.revokeObjectURL(url);
-    } catch (error) {
-        printError = 'Erro ao conectar ao servidor';
-        console.error(printError, error);
-    }
-}
-
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			printError = 'Erro ao conectar ao servidor';
+			console.error(printError, error);
+		}
+	}
 
 	/** @param {SubmitEvent} ev */
 	const handleMessageInjection = (ev) => {
@@ -329,6 +330,16 @@
 
 	/** @param {string} filename */
 	const isVideoFile = (filename) => isFile(filename, 'mp4');
+
+	/** @param {string} filename */
+	/** @param {string} ext */
+	const extIncludes = (filename, ext) => filename.toLowerCase().includes(`.${ext}`);
+
+	/** @param {string} filename */
+	const isImgFile = (filename) => ['png', 'jpg', 'jpeg'].some((ext) => extIncludes(filename, ext));
+
+	/** @param {string} filename */
+	const isWordFile = (filename) => ['docm', 'docx'].some((ext) => extIncludes(filename, ext));
 
 	/** @param {string} path */
 	const getFileName = (path) => path.split('/').pop();
@@ -374,14 +385,16 @@
 	/>
 	<input
 		data-testid="playwright-inject-media"
-		type="file" accept=".zip"
+		type="file"
+		accept=".zip"
 		on:change={async (e) => {
 			error = null;
 			printError = null;
 			isLoading = true;
 			result = null;
-			await processZipFile(e.target.files[0])
+			await processZipFile(e.target.files[0]);
 			isLoading = false;
+			showPDFButton = true;
 		}}
 	/>
 
@@ -394,54 +407,52 @@
 							<span class="message-name">{message.Name}</span>
 							<span class="message-time">{message.Time}</span>
 						</div>
-						{#if message.FileAttached !== false}
-							{#if message.FileAttached}
-								{#if message.links}
-									<div class="thumbnails">
-										<div class="filename">{getFileName(message.FileAttached)}</div>
-										{#each message.links as link, index}
-											{#if index % 2 === 0}
-												<div class="thumbnail-container">
-													<img
-														src={link}
-														alt="PDF"
-														class="thumbnail-pdf {message.links[index + 1] === 'landscape'
-															? 'landscape'
-															: 'portrait'}"
-													/>
-												</div>
-											{/if}
-										{/each}
-										<span class="small-description"
-											>Imagens apenas ilustrativas, confira os arquivos originais, demonstrando no 6
-											miniaturas máximo.</span
-										>
-									</div>
-								{/if}
-								{#if message.FileAttached.toLowerCase().includes('.docx')}
+						{#if message.FileAttached}
+							{#if message.links}
+								<div class="thumbnails">
 									<div class="filename">{getFileName(message.FileAttached)}</div>
-								{/if}
-
-								{#if isAudioFile(message.FileAttached)}
-									<div class="audio-message">
-										<div class="audio-filename">{getFileName(message.FileAttached)}</div>
-										<audio controls src={message.FileURL}></audio>
-										{#if message.AudioTranscription}
-											<div class="transcription">
-												{message.AudioTranscription}
+									{#each message.links as link, index}
+										{#if index % 2 === 0}
+											<div class="thumbnail-container">
+												<img
+													src={link}
+													alt="PDF"
+													class="thumbnail-pdf {message.links[index + 1] === 'landscape'
+														? 'landscape'
+														: 'portrait'}"
+												/>
 											</div>
 										{/if}
-									</div>
-								{/if}
+									{/each}
+									<span class="small-description"
+										>Imagens apenas ilustrativas, confira os arquivos originais, demonstrando no 6
+										miniaturas máximo.</span
+									>
+								</div>
+							{/if}
+							{#if isWordFile(message.FileAttached)}
+								<div class="filename">{getFileName(message.FileAttached)}</div>
+							{/if}
 
-								{#if message.FileAttached.toLowerCase().includes('.mp4')}
-									<Video fileURL={message.FileURL} thumbnail={message.thumbnail} />
-								{/if}
+							{#if isAudioFile(message.FileAttached)}
+								<div class="audio-message">
+									<div class="audio-filename">{getFileName(message.FileAttached)}</div>
+									<audio controls src={message.FileURL}></audio>
+									{#if message.AudioTranscription}
+										<div class="transcription">
+											{message.AudioTranscription}
+										</div>
+									{/if}
+								</div>
+							{/if}
 
-								{#if message.FileAttached.toLowerCase().includes('.jpg') || message.FileAttached.toLowerCase().includes('.jpeg') || message.FileAttached.toLowerCase().includes('.png')}
-									<div class="filename">{getFileName(message.FileAttached)}</div>
-									<img src={message.FileURL} alt="Mídia na Conversa" class="image-preview" />
-								{/if}
+							{#if isVideoFile(message.FileAttached)}
+								<Video fileURL={message.FileURL} thumbnail={message.thumbnail} />
+							{/if}
+
+							{#if isImgFile(message.FileAttached)}
+								<div class="filename">{getFileName(message.FileAttached)}</div>
+								<img src={message.FileURL} alt="Mídia na Conversa" class="image-preview" />
 							{/if}
 						{:else}
 							<p class="message-text">{message.Message}</p>
@@ -536,12 +547,14 @@
 			break-inside: avoid;
 		}
 
-		[data-testid='playwright-inject-chat'], [data-testid='playwright-inject-media'] {
+		[data-testid='playwright-inject-chat'],
+		[data-testid='playwright-inject-media'] {
 			display: none !important;
 		}
 	}
 
-	[data-testid='playwright-inject-chat'], [data-testid='playwright-inject-media'] {
+	[data-testid='playwright-inject-chat'],
+	[data-testid='playwright-inject-media'] {
 		display: none;
 	}
 
