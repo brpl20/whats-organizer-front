@@ -1,7 +1,7 @@
 <script>
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	/**
-	 * @prop {string} fileURL - URL do arquivo de vídeo.
+	 * @type {string}
 	 * Cria um componente de vídeo e um thumbnail quando exporta para PDF.
 	 */
 	export let fileURL;
@@ -15,11 +15,7 @@
 	/** @type {((this: HTMLVideoElement, ev: Event) => any) | null} */
 	let metadataListener = null;
 
-	$: if (video && canvas) {
-		if (metadataListener) {
-			video.removeEventListener('loadedmetadata', metadataListener);
-		}
-
+	$: if (video && canvas && !metadataListener) {
 		metadataListener = () => {
 			const ctx = canvas.getContext('2d');
 			canvas.width = video.videoWidth;
@@ -53,16 +49,18 @@
 </div>
 
 <style>
-    video {
-        display: block;
-    }
+	video {
+		display: block;
+	}
 
 	.video-thumb {
 		display: none;
 		position: relative;
 	}
 
-	video, .video-thumb, canvas {
+	video,
+	.video-thumb,
+	canvas {
 		max-width: 100%;
 		height: auto;
 		overflow: hidden;
@@ -78,8 +76,8 @@
 		left: 50%;
 		transform: translate(-50%, -50%);
 		z-index: 9;
-        display: grid;
-        place-content: center;
+		display: grid;
+		place-content: center;
 	}
 
 	.tri {

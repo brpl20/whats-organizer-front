@@ -3,22 +3,22 @@
 	import Pre from '$lib/Pre.svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import UploadButton from './UploadButton.svelte';
-	import {onDestroy} from 'svelte'
+	import { onDestroy } from 'svelte';
 	import Video from './ChatComponents/Video.svelte';
 	import { browser } from '$app/environment';
 
-	const socketConnTimeout = 5000
+	const socketConnTimeout = 5000;
 
 	/** @type {HTMLDivElement=}*/
 	let chatContainer = null;
 	/**
 	 * @typedef {object} ApiResult
-  	 * @property {string} Date
-  	 * @property {string|false} FileAttached
-  	 * @property {number} ID
-  	 * @property {string} Message
-  	 * @property {string} Name
-  	 * @property {string} Time
+	 * @property {string} Date
+	 * @property {string|false} FileAttached
+	 * @property {number} ID
+	 * @property {string} Message
+	 * @property {string} Name
+	 * @property {string} Time
 	 * @property {string=} ERRO
 	 */
 	/** @type {ApiResult[]=} */
@@ -30,36 +30,48 @@
 	let printError = null;
 	let showLimitacoesModal = false;
 	let showLGPDModal = false;
+	/**
+ 	 * @typedef {object} Message
+	 * @property {string} Date
+  	 * @property {string|false} FileAttached
+  	 * @property {number} ID
+  	 * @property {string} Message
+  	 * @property {string} Name
+  	 * @property {string} Time
+  	 * @property {string=} FileURL
+  	 * @property {string=} type
+  	 * @property {number=} width
+  	 * @property {number=} height
+  	 * @property {number=} duration
+  	 * @property {string=} thumbnail
+	 */
+	/** @type {Message[]} */
 	let messages = [];
 	/** @type {string[]} */
 	let socketMessages = [];
 	let showPDFButton = false;
 
-	$: if (browser && !messages.length) messages = window.messages ?? []
+	$: console.log(messages);
 
 	/** Optimize import on-demand for heavy libs */
 	/** @type {import('jszip')=} */
-	let JSZip = null
+	let JSZip = null;
 	/** @type {import('mammoth')=} */
-	let mammoth = null
+	let mammoth = null;
 	/** @type {import('socket.io-client').default=}*/
-	let io = null
-	/** @type {import('jspdf').default=} */
-	let jsPDF = null
-	/** @type {import('html2canvas')=} */
-	let html2canvas = null;
+	let io = null;
 
 	/** @type {import('socket.io-client').Socket<DefaultEventsMap, DefaultEventsMap>=}*/
 	let socket = null;
 
-	onDestroy(() => socket?.disconnect?.())
+	onDestroy(() => socket?.disconnect?.());
 
-	const toggleLimitacoesModal = () => showLimitacoesModal = !showLimitacoesModal;
+	const toggleLimitacoesModal = () => (showLimitacoesModal = !showLimitacoesModal);
 
-	const toggleLGPDModal = () => showLGPDModal = !showLGPDModal;
+	const toggleLGPDModal = () => (showLGPDModal = !showLGPDModal);
 
 	async function processZipFile(file) {
-		JSZip ??= ((await import('jszip')).default)
+		JSZip ??= (await import('jszip')).default;
 		const zip = new JSZip();
 		const contents = await zip.loadAsync(file);
 
@@ -131,66 +143,64 @@
 
 	async function getDocxInfo(blob) {
 		const arrayBuffer = await blob.arrayBuffer();
-		mammoth ??= (await import('mammoth'))
+		mammoth ??= await import('mammoth');
 		const htmlResult = await mammoth.convertToHtml({ arrayBuffer });
 		const text = htmlResult.value;
 		const pages = text.split('\n\n').slice(0, 6);
 		return { type: 'docx', pages };
 	}
 
-	async function getImageInfo(blob) {
-		return new Promise((resolve) => {
+	const blobToBase64Url = async(blob) => new Promise((resolve, reject) => {
+		const reader = new FileReader()
+		reader.onload = (_) => resolve(reader.result)
+		reader.onerror = (e) => reject(e)
+		reader.readAsDataURL(blob) 
+	})
+
+	const getImageInfo = async (blob) =>
+		new Promise((resolve) => {
 			const img = new Image();
 			img.onload = () => resolve({ type: 'image', width: img.width, height: img.height });
 			img.src = URL.createObjectURL(blob);
 		});
-	}
 
-	async function getVideoInfo(blob) {
-		return new Promise((resolve) => {
+	const getVideoInfo = async (blob) =>
+		new Promise((resolve) => {
 			const video = document.createElement('video');
-			video.onloadedmetadata = () => {
-				const canvas = document.createElement('canvas');
-				canvas.width = video.videoWidth;
-				canvas.height = video.videoHeight;
-				canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-				const thumbnail = canvas.toDataURL();
-				resolve({ type: 'video', duration: video.duration, thumbnail });
-			};
 			video.src = URL.createObjectURL(blob);
+			video.onloadedmetadata = () => {
+				resolve({ type: 'video', duration: video.duration });
+			};
 		});
-	}
 
 	async function connectSocket() {
-		socketMessages = []
+		socketMessages = [];
 		if (socket) return;
 
-		io ??= (await import('socket.io-client')).default
+		io ??= (await import('socket.io-client')).default;
 		socket ??= io(PUBLIC_API_URL, {
 			reconnectionAttempts: 5,
 			transports: ['websocket', 'polling', 'webtransport'],
-			timeout: socketConnTimeout,
+			timeout: socketConnTimeout
 		});
 
 		/** @type {Promise<void>} */
-		const connect = new Promise((resolve, _) => (
-			socket.on('connect', resolve))
-		)
+		const connect = new Promise((resolve, _) => socket.on('connect', resolve));
 		/** @type {Promise<void>} */
-		const timeout = new Promise((_, reject) => setTimeout(() => (
-			reject(new Error('Connection timed out'))
-		), socketConnTimeout));
+		const timeout = new Promise((_, reject) =>
+			setTimeout(() => reject(new Error('Connection timed out')), socketConnTimeout)
+		);
 
 		try {
-			Promise.race([connect, timeout])
+			Promise.race([connect, timeout]);
 		} catch (e) {
-			socketMessages = ["Carregando..."]
-			console.error(e)
+			socketMessages = ['Carregando...'];
+			console.error(e);
 		}
 
 		socket.on('Smessage', (data) => {
 			console.log('Server message:', data);
-			if (!(data?.data)) return;
+			if (!data?.data) return;
 			socketMessages = [...socketMessages, data.data];
 		});
 	}
@@ -198,10 +208,9 @@
 	/** @param {SubmitEvent} ev */
 	async function handleSubmit(ev) {
 		ev.preventDefault();
-		const elements = /** @type {HTMLFormControlsCollection} */(ev.target.elements)
-		const fileInput = elements?.[1]
-		const files = /** @type {FileList} */(fileInput.files)
-
+		const elements = /** @type {HTMLFormControlsCollection} */ (ev.target.elements);
+		const fileInput = elements?.[1];
+		const files = /** @type {FileList} */ (fileInput.files);
 
 		if (!files?.length) {
 			error = 'Por favor selecione um arquivo zip antes.';
@@ -214,13 +223,12 @@
 			return;
 		}
 
-
 		error = null;
-		printError = null
+		printError = null;
 		isLoading = true;
 		result = null;
 
-		await connectSocket()
+		await connectSocket();
 
 		const formData = new FormData();
 		formData.append('file', file);
@@ -238,12 +246,12 @@
 			result = await response.json();
 			if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
 				error = result[0].ERRO;
-				return
+				return;
 			} // else
 			if (!Array.isArray(result) && result.Erro) {
-        	  error = result.Erro
-        	  return
-        	}
+				error = result.Erro;
+				return;
+			}
 			messages = result;
 			await processZipFile(file);
 			showPDFButton = true;
@@ -256,70 +264,67 @@
 	}
 
 	async function generatePDF() {
-    let printError = null;
+		let printError = null;
 
-    if (!chatContainer) {
-        console.error('Chat container not found');
-        printError = 'Não há chat para imprimir';
-        return;
-    }
+		if (!chatContainer) {
+			console.error('Chat container not found');
+			printError = 'Não há chat para imprimir';
+			return;
+		}
 
-    try {
-        const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ messages }),
-        });
+		try {
+			const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ messages })
+			});
 
-        if (!response.ok) {
-            printError = 'Erro ao gerar o PDF';
-            console.error(printError, await response.text());
-            return;
-        }
+			if (!response.ok) {
+				printError = 'Erro ao gerar o PDF';
+				console.error(printError, await response.text());
+				return;
+			}
 
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
 
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'chat.pdf';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'chat.pdf';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
 
-        URL.revokeObjectURL(url);
-    } catch (error) {
-        printError = 'Erro ao conectar ao servidor';
-        console.error(printError, error);
-    }
-}
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			printError = 'Erro ao conectar ao servidor';
+			console.error(printError, error);
+		}
+	}
 
-/** @param {SubmitEvent} ev */
-const handleMessageInjection = (ev) => {
-	if (!ev.target.value) return;
-	messages = JSON.parse(ev.target.value);
-}
-
+	/** @param {SubmitEvent} ev */
+	const handleMessageInjection = (ev) => {
+		if (!ev.target.value) return;
+		messages = JSON.parse(ev.target.value);
+	};
 
 	/**
 	 * @param {string} filename
 	 * @param {string} ext
 	 * @returns {boolean}
 	 */
-	const isFile = (filename, ext) => filename?.endsWith?.(`.${ext}`)
+	const isFile = (filename, ext) => filename?.endsWith?.(`.${ext}`);
 
 	/** @param {string} filename */
-	const isAudioFile = (filename) => isFile(filename, 'opus')
+	const isAudioFile = (filename) => isFile(filename, 'opus');
 
 	/** @param {string} filename */
-	const isVideoFile = (filename) => isFile(filename, 'mp4')
+	const isVideoFile = (filename) => isFile(filename, 'mp4');
 
 	/** @param {string} path */
-	const getFileName = (path) => path.split('/').pop()
-
-
+	const getFileName = (path) => path.split('/').pop();
 </script>
 
 <main>
@@ -341,22 +346,31 @@ const handleMessageInjection = (ev) => {
 			{/each}
 		</ul>
 	{/if}
-		<form class="file-zip" on:submit={handleSubmit}>
-			<UploadButton />
-			<button type="submit" disabled={isLoading}>
-				{isLoading ? 'Processando...' : 'Enviar'}
-			</button>
-		</form>
+	<form class="file-zip" on:submit={handleSubmit}>
+		<UploadButton />
+		<button type="submit" disabled={isLoading}>
+			{isLoading ? 'Processando...' : 'Enviar'}
+		</button>
+	</form>
 
 	{#if error}
 		<p class="error">{error}</p>
 	{/if}
 
 	{#if printError}
-	<p class="error">{error}</p>
-{/if}
+		<p class="error">{error}</p>
+	{/if}
 
-	<input data-testid="playwright-inject-chat" on:keydown={(e) => e.key === 'Enter' && handleMessageInjection(e)} />
+	<input
+		data-testid="playwright-inject-chat"
+		on:keydown={(e) => e.key === 'Enter' && handleMessageInjection(e)}
+	/>
+	<input
+		data-testid="playwright-inject-media"
+		type="file" accept=".zip"
+		on:change={(e) => processZipFile(e.files[0])}
+	/>
+
 	{#if messages.length > 0}
 		<div class="chat-container" data-testid="playwright-chat" bind:this={chatContainer}>
 			{#each messages as message}
@@ -407,7 +421,7 @@ const handleMessageInjection = (ev) => {
 								{/if}
 
 								{#if message.FileAttached.toLowerCase().includes('.mp4')}
-									<Video fileURL={message.FileURL} />
+									<Video fileURL={message.FileURL} thumbnail={message.thumbnail} />
 								{/if}
 
 								{#if message.FileAttached.toLowerCase().includes('.jpg') || message.FileAttached.toLowerCase().includes('.jpeg') || message.FileAttached.toLowerCase().includes('.png')}
@@ -451,13 +465,14 @@ const handleMessageInjection = (ev) => {
 </main>
 
 {#if showLimitacoesModal}
-	<div 
-		class="modal-backdrop" 
-		role="button" 
-		tabindex="0" 
-		aria-label="Fechar modal de limitações" 
-		on:click={toggleLimitacoesModal} 
-		on:keydown={(e) => toggleLimitacoesModal()}>
+	<div
+		class="modal-backdrop"
+		role="button"
+		tabindex="0"
+		aria-label="Fechar modal de limitações"
+		on:click={toggleLimitacoesModal}
+		on:keydown={(e) => toggleLimitacoesModal()}
+	>
 		<div class="modal" transition:fade>
 			<h2>Limitações</h2>
 			<ul>
@@ -470,13 +485,14 @@ const handleMessageInjection = (ev) => {
 {/if}
 
 {#if showLGPDModal}
-	<div 
-		class="modal-backdrop" 
-		role="button" 
-		tabindex="0" 
-		aria-label="Fechar modal de LGPD" 
-		on:click={toggleLGPDModal} 
-		on:keydown={(e) => toggleLGPDModal()}>
+	<div
+		class="modal-backdrop"
+		role="button"
+		tabindex="0"
+		aria-label="Fechar modal de LGPD"
+		on:click={toggleLGPDModal}
+		on:keydown={(e) => toggleLGPDModal()}
+	>
 		<div class="modal" transition:fade>
 			<h2>LGPD</h2>
 			<p>
@@ -490,11 +506,11 @@ const handleMessageInjection = (ev) => {
 <style>
 	@media print {
 		@page {
-            size: A4;
-            margin: 1cm;
-        }
+			size: A4;
+			margin: 1cm;
+		}
 
-		main>:not(.chat-container) {
+		main > :not(.chat-container) {
 			display: none !important;
 		}
 
@@ -506,12 +522,12 @@ const handleMessageInjection = (ev) => {
 			break-inside: avoid;
 		}
 
-		[data-testid="playwright-inject-chat"] {
+		[data-testid='playwright-inject-chat'], [data-testid='playwright-inject-media'] {
 			display: none !important;
 		}
 	}
 
-	[data-testid="playwright-inject-chat"] {
+	[data-testid='playwright-inject-chat'], [data-testid='playwright-inject-media'] {
 		display: none;
 	}
 
