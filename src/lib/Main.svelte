@@ -282,7 +282,6 @@
 		try {
 			const formData = new FormData();
 			formData.append('messages', JSON.stringify(messages));
-			formData.append('result', JSON.stringify(result))
 			formData.append('file', files[0]);
 
 			const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
@@ -317,12 +316,6 @@
 	const handleMessageInjection = (ev) => {
 		if (!ev.target.value) return;
 		messages = JSON.parse(ev.target.value);
-	};
-
-	/** @param {SubmitEvent} ev */
-	const handleResultInjection = (ev) => {
-		if (!ev.target.value) return;
-		result = JSON.parse(ev.target.value);
 	};
 
 	/**
@@ -389,10 +382,6 @@
 	<input
 		data-testid="playwright-inject-chat"
 		on:keydown={(e) => e.key === 'Enter' && handleMessageInjection(e)}
-	/>
-	<input
-		data-testid="playwright-inject-result"
-		on:keydown={(e) => e.key === 'Enter' && handleResultInjection(e)}
 	/>
 	<input
 		data-testid="playwright-inject-media"
@@ -559,15 +548,13 @@
 		}
 
 		[data-testid='playwright-inject-chat'],
-		[data-testid='playwright-inject-media'],
-		[data-testid='playwright-inject-result'] {
+		[data-testid='playwright-inject-media'] {
 			display: none !important;
 		}
 	}
 
 	[data-testid='playwright-inject-chat'],
-	[data-testid='playwright-inject-media'],
-	[data-testid='playwright-inject-result'] {
+	[data-testid='playwright-inject-media'] {
 		display: none;
 	}
 
