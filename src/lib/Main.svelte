@@ -50,8 +50,10 @@
 	/** @type {string[]} */
 	let socketMessages = [];
 	let showPDFButton = false;
-
-	$: console.log(messages);
+	/** @type {FileList=} */
+	let files = null;
+	/** @param {CustomEvent<FileList>} event */
+	const updateFiles = (event) =>files = event.detail;
 
 	/** Optimize import on-demand for heavy libs */
 	/** @type {import('jszip')=} */
@@ -264,45 +266,47 @@
 	}
 
 	async function generatePDF() {
-		let printError = null;
+    let printError = null;
 
-		if (!chatContainer) {
-			console.error('Chat container not found');
-			printError = 'Não há chat para imprimir';
-			return;
-		}
+    if (!chatContainer) {
+        console.error('Chat container not found');
+        printError = 'Não há chat para imprimir';
+        return;
+    }
 
-		try {
-			const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ messages })
-			});
+    try {
+        const formData = new FormData();
+        formData.append('messages', JSON.stringify(messages));
+        formData.append('file', files[0]);
 
-			if (!response.ok) {
-				printError = 'Erro ao gerar o PDF';
-				console.error(printError, await response.text());
-				return;
-			}
+        const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
+            method: 'POST',
+            body: formData
+        });
 
-			const blob = await response.blob();
-			const url = URL.createObjectURL(blob);
+        if (!response.ok) {
+            printError = 'Erro ao gerar o PDF';
+            console.error(printError, await response.text());
+            return;
+        }
 
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = 'chat.pdf';
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
 
-			URL.revokeObjectURL(url);
-		} catch (error) {
-			printError = 'Erro ao conectar ao servidor';
-			console.error(printError, error);
-		}
-	}
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'chat.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        printError = 'Erro ao conectar ao servidor';
+        console.error(printError, error);
+    }
+}
+
 
 	/** @param {SubmitEvent} ev */
 	const handleMessageInjection = (ev) => {
@@ -347,7 +351,7 @@
 		</ul>
 	{/if}
 	<form class="file-zip" on:submit={handleSubmit}>
-		<UploadButton />
+		<UploadButton on:update={updateFiles} />
 		<button type="submit" disabled={isLoading}>
 			{isLoading ? 'Processando...' : 'Enviar'}
 		</button>

@@ -1,7 +1,8 @@
 <script>
 	import UploadIcon from "./UploadIcon.svelte";
+    import { createEventDispatcher } from 'svelte';
 
-    /** @type {File[]} */
+    /** @type {FileList} */
     let files = [];
     /** @type {HTMLInputElement | null} */
     let fileInput = null;
@@ -9,6 +10,8 @@
 
     let svgY = 45
     $: files?.length && (svgY += files.length * 15);
+    const dispatch = createEventDispatcher();
+    $:dispatch('update', files);
 
     function handleDrop(event) {
         event.preventDefault();
