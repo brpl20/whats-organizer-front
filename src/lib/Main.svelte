@@ -73,6 +73,7 @@
 	const toggleLGPDModal = () => (showLGPDModal = !showLGPDModal);
 
 	async function processZipFile(file) {
+		console.log(file)
 		JSZip ??= (await import('jszip')).default;
 		const zip = new JSZip();
 		const contents = await zip.loadAsync(file);
@@ -128,6 +129,7 @@
 			case 'pdf':
 				return { type: 'pdf' };
 			case 'docx':
+			case 'docm': // docx + macros enabled
 				return await getDocxInfo(blob);
 			case 'jpg':
 			case 'jpeg':
@@ -372,7 +374,7 @@
 	<input
 		data-testid="playwright-inject-media"
 		type="file" accept=".zip"
-		on:change={(e) => processZipFile(e.files[0])}
+		on:change={(e) => processZipFile(e.target.files[0])}
 	/>
 
 	{#if messages.length > 0}
