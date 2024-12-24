@@ -137,6 +137,7 @@
 			case 'gif':
 				return await getImageInfo(blob);
 			case 'mp4':
+				console.log('mp4')
 				return await getVideoInfo(blob);
 			case 'opus':
 				return { type: 'audio' };
@@ -374,7 +375,14 @@
 	<input
 		data-testid="playwright-inject-media"
 		type="file" accept=".zip"
-		on:change={(e) => processZipFile(e.target.files[0])}
+		on:change={async (e) => {
+			error = null;
+			printError = null;
+			isLoading = true;
+			result = null;
+			await processZipFile(e.target.files[0])
+			isLoading = false;
+		}}
 	/>
 
 	{#if messages.length > 0}
