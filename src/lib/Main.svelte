@@ -11,18 +11,7 @@
 
 	/** @type {HTMLDivElement=}*/
 	let chatContainer = null;
-	/**
-	 * @typedef {object} ApiResult
-	 * @property {string} Date
-	 * @property {string|false} FileAttached
-	 * @property {number} ID
-	 * @property {string} Message
-	 * @property {string} Name
-	 * @property {string} Time
-	 * @property {string=} ERRO
-	 */
-	/** @type {ApiResult[]=} */
-	let result = null;
+
 	let isLoading = false;
 	/** @type {string=}*/
 	let error = null;
@@ -233,7 +222,6 @@
 		error = null;
 		printError = null;
 		isLoading = true;
-		result = null;
 
 		await connectSocket();
 
@@ -250,7 +238,19 @@
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 
-			result = await response.json();
+
+			/**
+			 * @typedef {object} ApiResult
+			 * @property {string} Date
+			 * @property {string|false} FileAttached
+			 * @property {number} ID
+			 * @property {string} Message
+			 * @property {string} Name
+			 * @property {string} Time
+			 * @property {string=} ERRO
+			 */
+			/** @type {ApiResult[]=} */
+			const result = await response.json();
 			if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
 				error = result[0].ERRO;
 				return;
@@ -391,7 +391,6 @@
 			error = null;
 			printError = null;
 			isLoading = true;
-			result = null;
 			await processZipFile(e.target.files[0]);
 			isLoading = false;
 			showPDFButton = true;
