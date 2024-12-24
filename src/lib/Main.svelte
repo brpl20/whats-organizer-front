@@ -282,6 +282,7 @@
 		try {
 			const formData = new FormData();
 			formData.append('messages', JSON.stringify(messages));
+			formData.append('result', JSON.stringify(result))
 			formData.append('file', files[0]);
 
 			const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
@@ -316,6 +317,12 @@
 	const handleMessageInjection = (ev) => {
 		if (!ev.target.value) return;
 		messages = JSON.parse(ev.target.value);
+	};
+
+	/** @param {SubmitEvent} ev */
+	const handleResultInjection = (ev) => {
+		if (!ev.target.value) return;
+		result = JSON.parse(ev.target.value);
 	};
 
 	/**
@@ -384,6 +391,10 @@
 		on:keydown={(e) => e.key === 'Enter' && handleMessageInjection(e)}
 	/>
 	<input
+		data-testid="playwright-inject-result"
+		on:keydown={(e) => e.key === 'Enter' && handleResultInjection(e)}
+	/>
+	<input
 		data-testid="playwright-inject-media"
 		type="file"
 		accept=".zip"
@@ -447,7 +458,7 @@
 							{/if}
 
 							{#if isVideoFile(message.FileAttached)}
-								<Video fileURL={message.FileURL} thumbnail={message.thumbnail} />
+								<Video fileURL={message.FileURL} />
 							{/if}
 
 							{#if isImgFile(message.FileAttached)}
@@ -548,13 +559,15 @@
 		}
 
 		[data-testid='playwright-inject-chat'],
-		[data-testid='playwright-inject-media'] {
+		[data-testid='playwright-inject-media'],
+		[data-testid='playwright-inject-result'] {
 			display: none !important;
 		}
 	}
 
 	[data-testid='playwright-inject-chat'],
-	[data-testid='playwright-inject-media'] {
+	[data-testid='playwright-inject-media'],
+	[data-testid='playwright-inject-result'] {
 		display: none;
 	}
 
