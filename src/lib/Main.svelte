@@ -281,7 +281,7 @@
 
 		try {
 			const formData = new FormData();
-			formData.append('messages', JSON.stringify(messages));
+			formData.append('messages', JSON.stringify(result));
 			formData.append('file', files[0]);
 
 			const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
