@@ -20,6 +20,18 @@
 	let showLimitacoesModal = false;
 	let showLGPDModal = false;
 	/**
+	 * @typedef {object} ApiResult
+	 * @property {string} Date
+	 * @property {string|false} FileAttached
+	 * @property {number} ID
+	 * @property {string} Message
+	 * @property {string} Name
+	 * @property {string} Time
+	 * @property {string=} ERRO
+	 */
+	let result = null;
+	/** @type {ApiResult[]=} */
+	/**
 	 * @typedef {object} Message
 	 * @property {string} Date
 	 * @property {string|false} FileAttached
@@ -222,6 +234,8 @@
 		error = null;
 		printError = null;
 		isLoading = true;
+		messages = null
+		result = null
 
 		await connectSocket();
 
@@ -238,19 +252,7 @@
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 
-
-			/**
-			 * @typedef {object} ApiResult
-			 * @property {string} Date
-			 * @property {string|false} FileAttached
-			 * @property {number} ID
-			 * @property {string} Message
-			 * @property {string} Name
-			 * @property {string} Time
-			 * @property {string=} ERRO
-			 */
-			/** @type {ApiResult[]=} */
-			const result = await response.json();
+			result = await response.json();
 			if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
 				error = result[0].ERRO;
 				return;
@@ -397,7 +399,7 @@
 		}}
 	/>
 
-	{#if messages.length > 0}
+	{#if messages?.length > 0}
 		<div class="chat-container" data-testid="playwright-chat" bind:this={chatContainer}>
 			{#each messages as message}
 				<div class="message-wrapper {message.ID === 1 ? 'left' : 'right'}">

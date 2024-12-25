@@ -1,5 +1,5 @@
 <script>
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy } from 'svelte';
 	/**
 	 * @type {string}
 	 * Cria um componente de vídeo e um thumbnail quando exporta para PDF.
@@ -15,6 +15,8 @@
 	/** @type {((this: HTMLVideoElement, ev: Event) => any) | null} */
 	let metadataListener = null;
 
+	let renderedThumb = false;
+
 	$: if (video && canvas && !metadataListener) {
 		metadataListener = () => {
 			const ctx = canvas.getContext('2d');
@@ -25,7 +27,13 @@
 				ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 				requestAnimationFrame(renderFrame);
 			};
-			renderFrame();
+			try {
+				renderFrame();
+			} catch (e) {
+				throw e;
+			} finally {
+				renderedThumb = true;
+			}
 		};
 
 		video.addEventListener('loadedmetadata', metadataListener);
@@ -38,10 +46,10 @@
 	});
 </script>
 
-<video bind:this={video} controls src={fileURL}>
+<video bind:this={video} controls src={fileURL} data-rendered-thumbnail={renderedThumb}>
 	<track kind="captions" label="Vídeo enviado pelo WhatsApp" />
 </video>
-<div class="video-thumb">
+<div class="video-thumb" data-rendered-thumbnail={renderedThumb}>
 	<canvas bind:this={canvas}></canvas>
 	<div class="play-icon">
 		<div class="tri"></div>
