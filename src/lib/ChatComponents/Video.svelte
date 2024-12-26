@@ -23,16 +23,16 @@
 			canvas.width = video.videoWidth;
 			canvas.height = video.videoHeight;
 
-			const renderFrame = () => {
+			const renderFrame = (rendered = false) => {
+				if (rendered) renderedThumb = true;
 				ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-				requestAnimationFrame(renderFrame);
+				requestAnimationFrame(() => renderFrame(true));
 			};
 			try {
 				renderFrame();
 			} catch (e) {
-				throw e;
-			} finally {
 				renderedThumb = true;
+				throw e;
 			}
 		};
 
