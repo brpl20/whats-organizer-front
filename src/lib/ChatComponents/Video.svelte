@@ -36,12 +36,12 @@
 			}
 		};
 
-		video.addEventListener('loadedmetadata', metadataListener);
+		video.addEventListener('loadeddata', metadataListener);
 	}
 
 	onDestroy(() => {
 		if (video && metadataListener) {
-			video.removeEventListener('loadedmetadata', metadataListener);
+			video.removeEventListener('loadeddata', metadataListener);
 		}
 	});
 </script>
