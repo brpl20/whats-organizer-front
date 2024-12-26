@@ -851,6 +851,7 @@
 	}
 
 	.floating-button {
+		z-index: 1;
 		position: fixed;
 		bottom: 20px;
 		right: 20px;
