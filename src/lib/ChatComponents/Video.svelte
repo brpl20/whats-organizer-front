@@ -24,7 +24,7 @@
 			canvas.height = video.videoHeight;
 
 			const renderFrame = (rendered = false) => {
-				if (rendered) renderedThumb = true;
+				if (rendered) requestAnimationFrame(() => renderedThumb = true);
 				ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 				requestAnimationFrame(() => renderFrame(true));
 			};
