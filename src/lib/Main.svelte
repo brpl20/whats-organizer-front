@@ -74,7 +74,6 @@
 	const toggleLGPDModal = () => (showLGPDModal = !showLGPDModal);
 
 	async function processZipFile(file) {
-		console.log(file);
 		JSZip ??= (await import('jszip')).default;
 		const zip = new JSZip();
 		const contents = await zip.loadAsync(file);

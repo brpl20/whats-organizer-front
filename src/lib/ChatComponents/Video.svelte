@@ -19,13 +19,15 @@
 
 	$: if (video && canvas && !loadListener) {
 		loadListener = () => {
-			console.log(video.readyState)
 			const ctx = canvas.getContext('2d');
 			canvas.width = video.videoWidth;
 			canvas.height = video.videoHeight;
 
 			const renderFrame = (rendered = false) => {
-				if (rendered) requestAnimationFrame(() => renderedThumb = true);
+				if (rendered) requestAnimationFrame(() => {
+					renderedThumb = true;
+					video.removeEventListener('loadeddata', loadListener);
+				});
 				ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 				requestAnimationFrame(() => renderFrame(true));
 			};
@@ -47,7 +49,7 @@
 	});
 </script>
 
-<video bind:this={video} controls src={fileURL} data-rendered-thumbnail={renderedThumb} preload='auto'>
+<video bind:this={video} controls src={fileURL} data-rendered-thumbnail={renderedThumb} preload='metadata'>
 	<track kind="captions" label="Vídeo enviado pelo WhatsApp" />
 </video>
 <div class="video-thumb" data-rendered-thumbnail={renderedThumb}>
