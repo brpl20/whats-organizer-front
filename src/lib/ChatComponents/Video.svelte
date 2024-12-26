@@ -13,12 +13,12 @@
 	let canvas;
 
 	/** @type {((this: HTMLVideoElement, ev: Event) => any) | null} */
-	let metadataListener = null;
+	let loadListener = null;
 
 	let renderedThumb = false;
 
-	$: if (video && canvas && !metadataListener) {
-		metadataListener = () => {
+	$: if (video && canvas && !loadListener) {
+		loadListener = () => {
 			const ctx = canvas.getContext('2d');
 			canvas.width = video.videoWidth;
 			canvas.height = video.videoHeight;
@@ -36,17 +36,17 @@
 			}
 		};
 
-		video.addEventListener('loadeddata', metadataListener);
+		video.addEventListener('loadeddata', loadListener);
 	}
 
 	onDestroy(() => {
-		if (video && metadataListener) {
-			video.removeEventListener('loadeddata', metadataListener);
+		if (video && loadListener) {
+			video.removeEventListener('loadeddata', loadListener);
 		}
 	});
 </script>
 
-<video bind:this={video} controls src={fileURL} data-rendered-thumbnail={renderedThumb}>
+<video bind:this={video} controls src={fileURL} data-rendered-thumbnail={renderedThumb} preload='metadata'>
 	<track kind="captions" label="Vídeo enviado pelo WhatsApp" />
 </video>
 <div class="video-thumb" data-rendered-thumbnail={renderedThumb}>
