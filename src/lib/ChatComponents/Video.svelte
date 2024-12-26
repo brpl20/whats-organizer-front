@@ -46,7 +46,7 @@
 	});
 </script>
 
-<video bind:this={video} controls src={fileURL} data-rendered-thumbnail={renderedThumb} preload='metadata'>
+<video bind:this={video} controls src={fileURL} data-rendered-thumbnail={renderedThumb} preload='auto'>
 	<track kind="captions" label="Vídeo enviado pelo WhatsApp" />
 </video>
 <div class="video-thumb" data-rendered-thumbnail={renderedThumb}>
