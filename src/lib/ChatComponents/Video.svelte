@@ -19,6 +19,7 @@
 
 	$: if (video && canvas && !loadListener) {
 		loadListener = () => {
+			console.log(video.readyState)
 			const ctx = canvas.getContext('2d');
 			canvas.width = video.videoWidth;
 			canvas.height = video.videoHeight;
