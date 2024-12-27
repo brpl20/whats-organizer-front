@@ -24,9 +24,9 @@
 			canvas.height = video.videoHeight;
 
 			const renderFrame = (rendered = false) => {
+				if (!video) return
 				if (rendered) requestAnimationFrame(() => {
 					renderedThumb = true;
-					video.removeEventListener('loadeddata', loadListener);
 				});
 				ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 				requestAnimationFrame(() => renderFrame(true));
@@ -41,6 +41,9 @@
 
 		video.addEventListener('loadeddata', loadListener);
 	}
+
+	$: if (video && renderedThumb && loadListener)
+		video.removeEventListener('loadeddata', loadListener);
 
 	onDestroy(() => {
 		if (video && loadListener) {

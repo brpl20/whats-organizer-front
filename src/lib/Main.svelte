@@ -536,11 +536,27 @@
 	@media print {
 		@page {
 			size: A4;
-			margin: 1cm;
+			margin: 1cm 0;
+			/* background-color: #e5ddd5; */
+		}
+
+		* {
+			-webkit-print-color-adjust: exact !important;
+			print-color-adjust: exact !important;
+			color-adjust: exact !important;
 		}
 
 		main > :not(.chat-container) {
 			display: none !important;
+		}
+
+		main {
+			margin: 0 auto !important;
+			padding:  0 !important;
+		}
+
+		.chat-container {
+			margin: 0 !important;
 		}
 
 		main {
@@ -720,7 +736,7 @@
 	.chat-container {
 		max-width: 100%;
 		margin: 20px 0;
-		padding: 20px;
+		padding: 20px 20px 25px 20px;
 		background-color: #e5ddd5;
 		border-radius: 10px;
 		text-align: left;
@@ -729,7 +745,7 @@
 	.message-wrapper {
 		display: flex;
 		flex-direction: column;
-		padding: 6px 0;
+		padding: 12px 0 0 0;
 	}
 
 	.left {
