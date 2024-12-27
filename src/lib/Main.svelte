@@ -543,7 +543,7 @@
 			background-color: unset !important;
 		}
 
-		.message-bubble {
+		.message-wrapper {
 			break-inside: avoid;
 		}
 
@@ -725,7 +725,7 @@
 	.message-wrapper {
 		display: flex;
 		flex-direction: column;
-		padding: 8px 0;
+		padding: 6px 0;
 	}
 
 	.left {
