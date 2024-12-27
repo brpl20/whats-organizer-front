@@ -49,10 +49,10 @@
 	});
 </script>
 
-<video bind:this={video} controls src={fileURL} data-rendered-thumbnail={renderedThumb} preload='auto'>
+<video bind:this={video} controls src={fileURL} data-rendered={renderedThumb} preload='auto'>
 	<track kind="captions" label="Vídeo enviado pelo WhatsApp" />
 </video>
-<div class="video-thumb" data-rendered-thumbnail={renderedThumb}>
+<div class="video-thumb" data-rendered={renderedThumb}>
 	<canvas bind:this={canvas}></canvas>
 	<div class="play-icon">
 		<div class="tri"></div>

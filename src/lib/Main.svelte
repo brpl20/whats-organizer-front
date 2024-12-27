@@ -435,15 +435,19 @@
 							{/if}
 
 							{#if isAudioFile(message.FileAttached)}
-								<div class="audio-message">
-									<div class="audio-filename">{getFileName(message.FileAttached)}</div>
-									<audio controls src={message.FileURL}></audio>
-									{#if message.AudioTranscription}
-										<div class="transcription">
-											{message.AudioTranscription}
-										</div>
-									{/if}
-								</div>
+							<div class="audio-message">
+								<div class="audio-filename">{getFileName(message.FileAttached)}</div>
+								<audio preload="metadata" data-rendered="false" on:loadedmetadata={({target}) => {
+									target.currentTime = target.duration;
+									target.setAttribute('data-rendered', 'true')
+								}}
+									controls src={message.FileURL}></audio>
+								{#if message.AudioTranscription}
+									<div class="transcription">
+										{message.AudioTranscription}
+									</div>
+								{/if}
+							</div>
 							{/if}
 
 							{#if isVideoFile(message.FileAttached)}
