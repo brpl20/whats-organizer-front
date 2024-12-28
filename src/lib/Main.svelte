@@ -5,8 +5,8 @@
 	import UploadButton from './UploadButton.svelte';
 	import { onDestroy } from 'svelte';
 	import Video from './ChatComponents/Video.svelte';
-	import { browser } from '$app/environment';
 
+	/** Timeout caso o socketio não consiga conectar */
 	const socketConnTimeout = 5000;
 
 	/** @type {HTMLDivElement=}*/
@@ -29,8 +29,12 @@
 	 * @property {string} Time
 	 * @property {string=} ERRO
 	 */
+	/**
+	 * @typedef {object} ApiError
+	 * @property {string=} Erro
+	 */
+	/** @type {(ApiResult[]|ApiError)=} */
 	let result = null;
-	/** @type {ApiResult[]=} */
 	/**
 	 * @typedef {object} Message
 	 * @property {string} Date
@@ -73,27 +77,53 @@
 
 	const toggleLGPDModal = () => (showLGPDModal = !showLGPDModal);
 
+	/** @param {[string, string, Blob][]} urls */
+	const processMessages = async (urls) =>
+		(async () => {
+			const fileMap = new Map(urls.map(([url, filename, blob]) => [filename, { url, blob }]));
+
+			messages = await Promise.all(
+				messages.map(async (msg) => {
+					const match = fileMap.get(msg.FileAttached);
+					if (match) {
+						const fileInfo = await getFileInfo(match.blob, msg.FileAttached);
+						return { ...msg, FileURL: match.url, ...fileInfo };
+					}
+					return msg;
+				})
+			);
+
+			showPDFButton = true;
+		})().finally(() => {
+			isLoading = false;
+		});
+
+	/** @param {File} file */
 	async function processZipFile(file) {
 		JSZip ??= (await import('jszip')).default;
 		const zip = new JSZip();
 		const contents = await zip.loadAsync(file);
 
-		for (let [filename, zipEntry] of Object.entries(contents.files)) {
+		const urls = Object.entries(contents.files).map(async ([filename, zipEntry]) => {
 			const arrayBuffer = await zipEntry.async('arraybuffer');
 			const blob = new Blob([arrayBuffer], { type: getFileType(filename) });
 			const url = URL.createObjectURL(blob);
+			return [url, filename, blob];
+		});
 
-			messages = await Promise.all(
-				messages.map(async (msg) => {
-					if (msg.FileAttached === filename) {
-						const fileInfo = await getFileInfo(blob, filename);
-						return { ...msg, FileURL: url, ...fileInfo };
-					}
-					return msg;
-				})
-			);
-		}
+		return Promise.all(urls);
 	}
+
+	/** @param {File} file */
+	const processConversation = (file) => {
+		processZipFile(file)
+			.then((urls) => processMessages(urls))
+			.catch((e) => {
+				error = 'Falhou ao Processar o Arquivo ZIP, Verifique se o arquivo é Válido.';
+				isLoading = false;
+				console.error(e);
+			});
+	};
 
 	const getExt = (/** @type {string} */ filename) => filename.split('.').pop().toLowerCase();
 
@@ -123,6 +153,7 @@
 	}
 
 	/**
+	 * @param {Blob} blob
 	 * @param {string} filename
 	 */
 	async function getFileInfo(blob, filename) {
@@ -147,6 +178,7 @@
 		}
 	}
 
+	/** @param {Blob} blob */
 	async function getDocxInfo(blob) {
 		const arrayBuffer = await blob.arrayBuffer();
 		mammoth ??= await import('mammoth');
@@ -156,6 +188,7 @@
 		return { type: 'docx', pages };
 	}
 
+	/** @param {Blob} blob */
 	const blobToBase64Url = async (blob) =>
 		new Promise((resolve, reject) => {
 			const reader = new FileReader();
@@ -164,6 +197,7 @@
 			reader.readAsDataURL(blob);
 		});
 
+	/** @param {Blob} blob */
 	const getImageInfo = async (blob) =>
 		new Promise((resolve) => {
 			const img = new Image();
@@ -171,6 +205,7 @@
 			img.src = URL.createObjectURL(blob);
 		});
 
+	/** @param {Blob} blob */
 	const getVideoInfo = async (blob) =>
 		new Promise((resolve) => {
 			const video = document.createElement('video');
@@ -198,12 +233,10 @@
 			setTimeout(() => reject(new Error('Connection timed out')), socketConnTimeout)
 		);
 
-		try {
-			Promise.race([connect, timeout]);
-		} catch (e) {
+		Promise.race([connect, timeout]).catch((e) => {
 			socketMessages = ['Carregando...'];
 			console.error(e);
-		}
+		});
 
 		socket.on('Smessage', (data) => {
 			console.log('Server message:', data);
@@ -233,42 +266,37 @@
 		error = null;
 		printError = null;
 		isLoading = true;
-		messages = null
-		result = null
+		messages = null;
+		result = null;
+		showPDFButton = false;
 
 		await connectSocket();
 
 		const formData = new FormData();
 		formData.append('file', file);
 
-		try {
-			const response = await fetch(`${PUBLIC_API_URL}/process`, {
-				method: 'POST',
-				body: formData
-			});
+		const response = await fetch(`${PUBLIC_API_URL}/process`, {
+			method: 'POST',
+			body: formData
+		});
 
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			result = await response.json();
-			if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
-				error = result[0].ERRO;
-				return;
-			} // else
-			if (!Array.isArray(result) && result.Erro) {
-				error = result.Erro;
-				return;
-			}
-			messages = result;
-			await processZipFile(file);
-			showPDFButton = true;
-		} catch (e) {
-			console.error('Houve um erro ao processar o arquivo:', e);
-			error = 'Houve um erro ao processar o arquivo. Por favor Tente Novamente.';
-		} finally {
+		if (!response.ok) {
+			error = 'Falhou ao Enviar o Arquivo, Verifique Sua Conexão.';
 			isLoading = false;
+			console.error(`HTTP error! status: ${response.status}`);
 		}
+
+		result = await response.json();
+		if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
+			error = result[0].ERRO;
+			return;
+		} // else
+		if (!Array.isArray(result) && result.Erro) {
+			error = result.Erro;
+			return;
+		}
+		messages = result;
+		processConversation(file);
 	}
 
 	async function generatePDF() {
@@ -315,8 +343,11 @@
 
 	/** @param {SubmitEvent} ev */
 	const handleMessageInjection = (ev) => {
-		if (!ev.target.value) return;
-		messages = JSON.parse(ev.target.value);
+		/** @type { { target: {value: string} } } */
+		const { target } = ev;
+		const { value } = target || {};
+		if (!value) return;
+		messages = JSON.parse(value);
 	};
 
 	/**
@@ -332,15 +363,23 @@
 	/** @param {string} filename */
 	const isVideoFile = (filename) => isFile(filename, 'mp4');
 
-	/** @param {string} filename */
-	/** @param {string} ext */
+	/**
+	 * @param {string} filename
+	 * @param {string} ext
+	 */
 	const extIncludes = (filename, ext) => filename.toLowerCase().includes(`.${ext}`);
 
-	/** @param {string} filename */
-	const isImgFile = (filename) => ['png', 'jpg', 'jpeg'].some((ext) => extIncludes(filename, ext));
+	/**
+	 * @param {string} filename
+	 * @param {string[]} files
+	 */
+	const isInFiles = (filename, files) => files.some((ext) => extIncludes(filename, ext));
 
 	/** @param {string} filename */
-	const isWordFile = (filename) => ['docm', 'docx'].some((ext) => extIncludes(filename, ext));
+	const isImgFile = (filename) => isInFiles(filename, ['jpg', 'jpeg', 'png']);
+
+	/** @param {string} filename */
+	const isWordFile = (filename) => isInFiles(filename, ['docx', 'docm']);
 
 	/** @param {string} path */
 	const getFileName = (path) => path.split('/').pop();
@@ -388,13 +427,12 @@
 		data-testid="playwright-inject-media"
 		type="file"
 		accept=".zip"
-		on:change={async (e) => {
+		on:change={(e) => {
 			error = null;
 			printError = null;
 			isLoading = true;
-			await processZipFile(e.target.files[0]);
-			isLoading = false;
-			showPDFButton = true;
+			showPDFButton = false;
+			processConversation(e.target.files[0]);
 		}}
 	/>
 
@@ -435,19 +473,25 @@
 							{/if}
 
 							{#if isAudioFile(message.FileAttached)}
-							<div class="audio-message">
-								<div class="audio-filename">{getFileName(message.FileAttached)}</div>
-								<audio preload="metadata" data-rendered="false" on:loadedmetadata={({target}) => {
-									target.currentTime = target.duration;
-									target.setAttribute('data-rendered', 'true')
-								}}
-									controls src={message.FileURL}></audio>
-								{#if message.AudioTranscription}
-									<div class="transcription">
-										{message.AudioTranscription}
-									</div>
-								{/if}
-							</div>
+								<div class="audio-message">
+									<div class="audio-filename">{getFileName(message.FileAttached)}</div>
+									<audio
+										preload="metadata"
+										data-rendered="false"
+										on:loadedmetadata={({ target }) => {
+											// Para mostrar a duração do áudio ao gerar PDF
+											target.currentTime = target.duration;
+											target.setAttribute('data-rendered', 'true');
+										}}
+										controls
+										src={message.FileURL}
+									></audio>
+									{#if message.AudioTranscription}
+										<div class="transcription">
+											{message.AudioTranscription}
+										</div>
+									{/if}
+								</div>
 							{/if}
 
 							{#if isVideoFile(message.FileAttached)}
@@ -552,7 +596,7 @@
 
 		main {
 			margin: 0 auto !important;
-			padding:  0 !important;
+			padding: 0 !important;
 		}
 
 		.chat-container {
