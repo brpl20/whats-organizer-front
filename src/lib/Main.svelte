@@ -5,6 +5,7 @@
 	import UploadButton from './UploadButton.svelte';
 	import { onDestroy } from 'svelte';
 	import Video from './ChatComponents/Video.svelte';
+	import Audio from './ChatComponents/Audio.svelte';
 
 	/** Timeout caso o socketio não consiga conectar */
 	const socketConnTimeout = 5000;
@@ -468,39 +469,25 @@
 									>
 								</div>
 							{/if}
-							{#if isWordFile(message.FileAttached)}
-								<div class="filename">{getFileName(message.FileAttached)}</div>
-							{/if}
-
 							{#if isAudioFile(message.FileAttached)}
-								<div class="audio-message">
-									<div class="audio-filename">{getFileName(message.FileAttached)}</div>
-									<audio
-										preload="metadata"
-										data-rendered="false"
-										on:loadedmetadata={({ target }) => {
-											// Para mostrar a duração do áudio ao gerar PDF;
-											target.setAttribute('data-rendered', 'true');
-										}}
-										controls
-										src={message.FileURL}
-									></audio>
-									{#if message.AudioTranscription}
-										<div class="transcription">
-											{message.AudioTranscription}
-										</div>
-									{/if}
-								</div>
-							{/if}
-
-							{#if isVideoFile(message.FileAttached)}
-								<Video fileURL={message.FileURL} />
-							{/if}
-
-							{#if isImgFile(message.FileAttached)}
+								<Audio
+									filename={getFileName(message.FileAttached)}
+									fileUrl={message.FileURL}
+									audioTranscription={message.AudioTranscription}
+								/>
+							{:else if isImgFile(message.FileAttached)}
 								<div class="filename">{getFileName(message.FileAttached)}</div>
 								<img src={message.FileURL} alt="Mídia na Conversa" class="image-preview" />
+							{:else if isVideoFile(message.FileAttached)}
+								<Video fileURL={message.FileURL} />
+							{:else if isWordFile(message.FileAttached)}
+								<div class="filename">{getFileName(message.FileAttached)}</div>
 							{/if}
+						<!--
+							@TODO Verificar se foto com legenda funciona
+						    https://github.com/brpl20/whats-organizer-front/issues/5
+							Acho que a mídia faz com que não apareça legenda
+						 -->
 						{:else}
 							<p class="message-text">{message.Message}</p>
 						{/if}
@@ -611,7 +598,6 @@
 		[data-testid='playwright-inject-media'] {
 			display: none !important;
 		}
-
 	}
 
 	[data-testid='playwright-inject-chat'],
@@ -834,22 +820,10 @@
 		margin: 0;
 	}
 
-	.audio-filename {
-		font-size: 0.8em;
-		color: #666;
-		margin-bottom: 5px;
-	}
-
 	.filename {
 		font-size: 0.8em;
 		color: #666;
 		margin-bottom: 5px;
-	}
-
-	.transcription {
-		margin-top: 5px;
-		font-style: italic;
-		color: #666;
 	}
 
 	.image-preview {
@@ -919,112 +893,4 @@
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 		font-size: 17px;
 	}
-
-	.audio-message audio {
-		width: 300px;
-		border-radius: 20px;
-		display: flex;
-		margin: 10px auto;
-		background-color: #e0f5e9;
-		border-radius: 25px;
-		padding: 5px 10px;
-		position: relative;
-		outline: none;
-		-webkit-appearance: none;
-		appearance: none;
-		box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-	}
-
-	.audio-message audio::-webkit-media-controls-enclosure {
-		background-color: #e0f5e9;
-		border-radius: 25px;
-	}
-
-	.audio-message audio::-webkit-media-controls {
-		background-color: #e0f5e9;
-	}
-
-	.audio-message audio::-webkit-media-controls-play-button,
-	.audio-message audio::-webkit-media-controls-pause-button {
-		background-color: #25d366;
-		color: #fff;
-		border-radius: 50%;
-		width: 30px;
-		height: 30px;
-		border: none;
-	}
-
-	.audio-message audio::-webkit-media-controls-play-button:hover,
-	.audio-message audio::-webkit-media-controls-pause-button:hover {
-		background-color: #1bb257;
-	}
-
-	.audio-message audio::-webkit-media-controls-timeline {
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-	}
-
-	.audio-message audio::-webkit-media-controls-timeline::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		width: 10px;
-		height: 10px;
-		background-color: #25d366;
-		border-radius: 50%;
-		border: 2px solid #fff;
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-	}
-
-	.audio-message audio::-webkit-media-controls-volume-control-container,
-	.audio-message audio::-webkit-media-controls-volume-slider-container,
-	.audio-message audio::-webkit-media-controls-overflow-menu-button {
-		display: none !important;
-	}
-
-	.audio-message audio::-webkit-media-controls-current-time-display {
-		display: none;
-	}
-
-	.audio-message audio::-webkit-media-controls-time-remaining-display {
-		position: absolute;
-		left: 55px;
-		bottom: 0;
-	}
-
-	.audio-message audio::after {
-		content: attr(data-duration);
-		position: absolute;
-		bottom: -15px;
-		left: 50%;
-		transform: translateX(-50%);
-		font-size: small;
-		color: #1a3e1a;
-		font-family: Arial, sans-serif;
-	}
-
-	/* Firefox styles don't work as firefox has no pseudo attributes
-	when inspecting the shadow dom, only webkit
-	.audio-message audio::-moz-media-controls-enclosure {
-		background-color: #e0f5e9;
-		border-radius: 25px;
-	}
-
-	.audio-message audio::-moz-media-controls-button {
-		background-color: #25d366;
-		color: white;
-		border-radius: 50%;
-		border: none;
-	}
-
-	.audio-message audio::-moz-media-controls-button:hover {
-		background-color: #1bb257;
-	}
-
-	.audio-message audio::-moz-time-slider-thumb {
-		width: 10px;
-		height: 10px;
-		background-color: #25d366;
-		border-radius: 50%;
-		border: 2px solid #fff;
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-	}
-	*/
 </style>
