@@ -479,8 +479,7 @@
 										preload="metadata"
 										data-rendered="false"
 										on:loadedmetadata={({ target }) => {
-											// Para mostrar a duração do áudio ao gerar PDF
-											target.currentTime = target.duration;
+											// Para mostrar a duração do áudio ao gerar PDF;
 											target.setAttribute('data-rendered', 'true');
 										}}
 										controls
@@ -597,14 +596,11 @@
 		main {
 			margin: 0 auto !important;
 			padding: 0 !important;
+			background-color: unset !important;
 		}
 
 		.chat-container {
 			margin: 0 !important;
-		}
-
-		main {
-			background-color: unset !important;
 		}
 
 		.message-wrapper {
@@ -615,6 +611,7 @@
 		[data-testid='playwright-inject-media'] {
 			display: none !important;
 		}
+
 	}
 
 	[data-testid='playwright-inject-chat'],
@@ -837,11 +834,6 @@
 		margin: 0;
 	}
 
-	.audio-message audio {
-		width: 100%;
-		border-radius: 20px;
-	}
-
 	.audio-filename {
 		font-size: 0.8em;
 		color: #666;
@@ -927,4 +919,112 @@
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 		font-size: 17px;
 	}
+
+	.audio-message audio {
+		width: 300px;
+		border-radius: 20px;
+		display: flex;
+		margin: 10px auto;
+		background-color: #e0f5e9;
+		border-radius: 25px;
+		padding: 5px 10px;
+		position: relative;
+		outline: none;
+		-webkit-appearance: none;
+		appearance: none;
+		box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+	}
+
+	.audio-message audio::-webkit-media-controls-enclosure {
+		background-color: #e0f5e9;
+		border-radius: 25px;
+	}
+
+	.audio-message audio::-webkit-media-controls {
+		background-color: #e0f5e9;
+	}
+
+	.audio-message audio::-webkit-media-controls-play-button,
+	.audio-message audio::-webkit-media-controls-pause-button {
+		background-color: #25d366;
+		color: #fff;
+		border-radius: 50%;
+		width: 30px;
+		height: 30px;
+		border: none;
+	}
+
+	.audio-message audio::-webkit-media-controls-play-button:hover,
+	.audio-message audio::-webkit-media-controls-pause-button:hover {
+		background-color: #1bb257;
+	}
+
+	.audio-message audio::-webkit-media-controls-timeline {
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+	}
+
+	.audio-message audio::-webkit-media-controls-timeline::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		width: 10px;
+		height: 10px;
+		background-color: #25d366;
+		border-radius: 50%;
+		border: 2px solid #fff;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+	}
+
+	.audio-message audio::-webkit-media-controls-volume-control-container,
+	.audio-message audio::-webkit-media-controls-volume-slider-container,
+	.audio-message audio::-webkit-media-controls-overflow-menu-button {
+		display: none !important;
+	}
+
+	.audio-message audio::-webkit-media-controls-current-time-display {
+		display: none;
+	}
+
+	.audio-message audio::-webkit-media-controls-time-remaining-display {
+		position: absolute;
+		left: 55px;
+		bottom: 0;
+	}
+
+	.audio-message audio::after {
+		content: attr(data-duration);
+		position: absolute;
+		bottom: -15px;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: small;
+		color: #1a3e1a;
+		font-family: Arial, sans-serif;
+	}
+
+	/* Firefox styles don't work as firefox has no pseudo attributes
+	when inspecting the shadow dom, only webkit
+	.audio-message audio::-moz-media-controls-enclosure {
+		background-color: #e0f5e9;
+		border-radius: 25px;
+	}
+
+	.audio-message audio::-moz-media-controls-button {
+		background-color: #25d366;
+		color: white;
+		border-radius: 50%;
+		border: none;
+	}
+
+	.audio-message audio::-moz-media-controls-button:hover {
+		background-color: #1bb257;
+	}
+
+	.audio-message audio::-moz-time-slider-thumb {
+		width: 10px;
+		height: 10px;
+		background-color: #25d366;
+		border-radius: 50%;
+		border: 2px solid #fff;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+	}
+	*/
 </style>
