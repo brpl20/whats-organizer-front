@@ -279,7 +279,12 @@
 		const response = await fetch(`${PUBLIC_API_URL}/process`, {
 			method: 'POST',
 			body: formData
+		}).catch(e => {
+			console.error(e);
+			error = 'Falhou ao Enviar o Arquivo, Verifique Sua Conexão.';
+			isLoading = false;
 		});
+		if (!response) return;
 
 		if (!response.ok) {
 			error = 'Falhou ao Enviar o Arquivo, Verifique Sua Conexão.';
@@ -300,6 +305,35 @@
 		processConversation(file);
 	}
 
+	/**
+	 * Cria um arquivo zip com messages json para o back imprimir 
+	 * @param {File} file
+	 * @return {Promise<File>}
+	 */
+	const addMessagesJson = async (file) => {
+        JSZip ??= (await import('jszip')).default;
+        const zip = new JSZip();
+        const contents = await zip.loadAsync(file);
+        contents.file('whats_organizer/messages.json', JSON.stringify(messages));
+        const updatedFile = await zip.generateAsync({ type: 'blob' });
+        return new File([updatedFile], file.name, { type: file.type });
+    };
+
+	/**
+	 * Cria um arquivo zip com messages json para o back imprimir 
+	 * @param {File} file
+	 * @return {Promise<Message[]>}
+	 */
+	const extractMessagesJson = async (file) => {
+		JSZip ??= (await import('jszip')).default;
+        const zip = new JSZip();
+        const contents = await zip.loadAsync(file);
+		contents.folder('whats_organizer')
+
+		const msgFile = contents.files['messages.json']
+		return msgFile.async('text')
+	}
+
 	async function generatePDF() {
 		let printError = null;
 
@@ -311,8 +345,10 @@
 
 		try {
 			const formData = new FormData();
-			formData.append('messages', JSON.stringify(result));
-			formData.append('file', files[0]);
+			const zipFile = files[0];
+			const fileWithMessages = addMessagesJson(zipFile);
+
+			formData.append('file', fileWithMessages);
 
 			const response = await fetch(`${PUBLIC_API_URL}/download-pdf`, {
 				method: 'POST',
@@ -384,6 +420,22 @@
 
 	/** @param {string} path */
 	const getFileName = (path) => path.split('/').pop();
+
+	/**
+	 * Função utilizada pelo backend, pra injetar a conversa e gerar o PDF
+	 * em um navegador simulado que roda no servidor (playwright)
+	 * @param {Event & {currentTarget: EventTarget & HTMLInputElement}} e 
+	 */
+	const handleBackendFileInjection = (e) => {
+			error = null;
+			printError = null;
+			isLoading = true;
+			showPDFButton = false;
+			const injectedFile = e.target.files[0]
+			extractMessagesJson()
+				.then(m => messages = m);
+			processConversation(injectedFile);
+	}
 </script>
 
 <main>
@@ -421,20 +473,10 @@
 	{/if}
 
 	<input
-		data-testid="playwright-inject-chat"
-		on:keydown={(e) => e.key === 'Enter' && handleMessageInjection(e)}
-	/>
-	<input
 		data-testid="playwright-inject-media"
 		type="file"
 		accept=".zip"
-		on:change={(e) => {
-			error = null;
-			printError = null;
-			isLoading = true;
-			showPDFButton = false;
-			processConversation(e.target.files[0]);
-		}}
+		on:change={handleBackendFileInjection}
 	/>
 
 	{#if messages?.length > 0}
@@ -594,7 +636,6 @@
 			break-inside: avoid;
 		}
 
-		[data-testid='playwright-inject-chat'],
 		[data-testid='playwright-inject-media'] {
 			display: none !important;
 		}
