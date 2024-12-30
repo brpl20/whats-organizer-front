@@ -330,7 +330,7 @@
         const contents = await zip.loadAsync(file);
 
 		const msgFile = contents.files['whats_organizer/messages.json']
-		return JSON.parse(msgFile.async('text'))
+		return JSON.parse(await msgFile.async('text'))
 	}
 
 	async function generatePDF() {
