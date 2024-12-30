@@ -6,6 +6,8 @@
 	import { onDestroy } from 'svelte';
 	import Video from './ChatComponents/Video.svelte';
 	import Audio from './ChatComponents/Audio.svelte';
+	import Toast from './Toast.svelte';
+	import PrintSvg from './PrinterSvg.svelte';
 
 	/** Timeout caso o socketio não consiga conectar */
 	const socketConnTimeout = 5000;
@@ -14,6 +16,7 @@
 	let chatContainer = null;
 
 	let isLoading = false;
+	let isPrinting = false;
 	/** @type {string=}*/
 	let error = null;
 	/** @type {string=}*/
@@ -242,6 +245,10 @@
 		socket.on('Smessage', (data) => {
 			console.log('Server message:', data);
 			if (!data?.data) return;
+			if (isPrinting) {
+				socketMessages = [data.data]
+				return
+			} // else
 			socketMessages = [...socketMessages, data.data];
 		});
 	}
@@ -271,7 +278,7 @@
 		result = null;
 		showPDFButton = false;
 
-		await connectSocket();
+		connectSocket();
 
 		const formData = new FormData();
 		formData.append('file', file);
@@ -279,7 +286,7 @@
 		const response = await fetch(`${PUBLIC_API_URL}/process`, {
 			method: 'POST',
 			body: formData
-		}).catch(e => {
+		}).catch((e) => {
 			console.error(e);
 			error = 'Falhou ao Enviar o Arquivo, Verifique Sua Conexão.';
 			isLoading = false;
@@ -306,32 +313,32 @@
 	}
 
 	/**
-	 * Cria um arquivo zip com messages json para o back imprimir 
+	 * Cria um arquivo zip com messages json para o back imprimir
 	 * @param {File} file
 	 * @return {Promise<File>}
 	 */
 	const addMessagesJson = async (file) => {
-        JSZip ??= (await import('jszip')).default;
-        const zip = new JSZip();
-        const contents = await zip.loadAsync(file);
-        contents.file('whats_organizer/messages.json', JSON.stringify(messages));
-        const updatedFile = await zip.generateAsync({ type: 'blob' });
-        return new File([updatedFile], file.name, { type: file.type });
-    };
+		JSZip ??= (await import('jszip')).default;
+		const zip = new JSZip();
+		const contents = await zip.loadAsync(file);
+		contents.file('whats_organizer/messages.json', JSON.stringify(messages));
+		const updatedFile = await zip.generateAsync({ type: 'blob' });
+		return new File([updatedFile], file.name, { type: file.type });
+	};
 
 	/**
-	 * Cria um arquivo zip com messages json para o back imprimir 
+	 * Cria um arquivo zip com messages json para o back imprimir
 	 * @param {File} file
 	 * @return {Promise<Message[]>}
 	 */
 	const extractMessagesJson = async (file) => {
 		JSZip ??= (await import('jszip')).default;
-        const zip = new JSZip();
-        const contents = await zip.loadAsync(file);
+		const zip = new JSZip();
+		const contents = await zip.loadAsync(file);
 
-		const msgFile = contents.files['whats_organizer/messages.json']
-		return JSON.parse(await msgFile.async('text'))
-	}
+		const msgFile = contents.files['whats_organizer/messages.json'];
+		return JSON.parse(await msgFile.async('text'));
+	};
 
 	async function generatePDF() {
 		let printError = null;
@@ -341,6 +348,8 @@
 			printError = 'Não há chat para imprimir';
 			return;
 		}
+		isPrinting = true;
+		connectSocket();
 
 		try {
 			const formData = new FormData();
@@ -357,8 +366,9 @@
 			if (!response.ok) {
 				printError = 'Erro ao gerar o PDF';
 				console.error(printError, await response.text());
-				return;
+				throw new Error();
 			}
+			isPrinting = false;
 
 			const blob = await response.blob();
 			const url = URL.createObjectURL(blob);
@@ -374,6 +384,8 @@
 		} catch (error) {
 			printError = 'Erro ao conectar ao servidor';
 			console.error(printError, error);
+		} finally {
+			isPrinting = false;
 		}
 	}
 
@@ -423,15 +435,14 @@
 	/**
 	 * Função utilizada pelo backend, pra injetar a conversa e gerar o PDF
 	 * em um navegador simulado que roda no servidor (playwright)
-	 * @param {Event & {currentTarget: EventTarget & HTMLInputElement}} e 
+	 * @param {Event & {currentTarget: EventTarget & HTMLInputElement}} e
 	 */
 	const handleBackendFileInjection = (e) => {
-			/** @type {File} */
-			const injectedFile = e.target.files[0]
-			extractMessagesJson(injectedFile)
-				.then(m => messages = m);
-			processConversation(injectedFile);
-	}
+		/** @type {File} */
+		const injectedFile = e.target.files[0];
+		extractMessagesJson(injectedFile).then((m) => (messages = m));
+		processConversation(injectedFile);
+	};
 </script>
 
 <main>
@@ -453,6 +464,7 @@
 			{/each}
 		</ul>
 	{/if}
+	<Toast svg={PrintSvg} text={socketMessages[0] || "Enviando Solicitação"} toastId="pdfprint" dismiss={!isPrinting} />
 	<form class="file-zip" on:submit={handleSubmit}>
 		<UploadButton on:update={updateFiles} />
 		<button type="submit" disabled={isLoading}>
@@ -521,7 +533,7 @@
 							{:else if isWordFile(message.FileAttached)}
 								<div class="filename">{getFileName(message.FileAttached)}</div>
 							{/if}
-						<!--
+							<!--
 							@TODO Verificar se foto com legenda funciona
 						    https://github.com/brpl20/whats-organizer-front/issues/5
 							Acho que a mídia faz com que não apareça legenda
@@ -556,9 +568,15 @@
 	</div>
 
 	{#if showPDFButton}
-		<button class="floating-button" on:click={generatePDF}> Download PDF </button>
+		<button class="floating-button loading-button" on:click={generatePDF}>
+			{#if isPrinting}
+				<div class="spinner-container sm-spinner-container">
+					<div class="spinner sm-spinner" />
+				</div>
+			{/if}
+			Download PDF
+		</button>
 	{/if}
-	<Pre />
 </main>
 
 {#if showLimitacoesModal}
@@ -676,6 +694,17 @@
 	.spinner::after {
 		margin: 8px;
 		animation-duration: 3s;
+	}
+
+	.sm-spinner-container {
+		height: 10px;
+		width: 44px;
+		margin: 0 12px 0 0;
+	}
+
+	.sm-spinner::after {
+		margin: 0px;
+		animation-duration: 2s;
 	}
 	@keyframes l15 {
 		100% {
@@ -870,7 +899,7 @@
 
 	.image-preview:hover {
 		transform: scale(3.5);
-		z-index: 10;
+		z-index: 9;
 	}
 
 	.thumbnail-pdf {
@@ -894,12 +923,12 @@
 
 	.thumbnail-pdf.landscape:hover {
 		transform: scale(3.5);
-		z-index: 10;
+		z-index: 9;
 	}
 
 	.thumbnail-pdf.portrait:hover {
 		transform: scale(3.5);
-		z-index: 10;
+		z-index: 9;
 	}
 
 	.small-description {
@@ -913,6 +942,10 @@
 		border-left: 3px solid #ccc;
 		margin: 10px 0;
 		display: inline-block;
+	}
+
+	.loading-button {
+		display: flex;
 	}
 
 	.floating-button {
