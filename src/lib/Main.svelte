@@ -328,9 +328,12 @@
 		JSZip ??= (await import('jszip')).default;
         const zip = new JSZip();
         const contents = await zip.loadAsync(file);
+		console.log({contents})
 		const waFolder = contents.folder('whats_organizer')
+		console.log({waFolder})
 
 		const msgFile = waFolder.files['messages.json']
+		console.log({msgFile})
 		return msgFile.async('text')
 	}
 
