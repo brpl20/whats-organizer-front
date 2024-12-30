@@ -80,20 +80,6 @@
 		background-color: #1bb257;
 	}
 
-	.audio-message audio::-webkit-media-controls-timeline {
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-	}
-
-	.audio-message audio::-webkit-media-controls-timeline::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		width: 10px;
-		height: 10px;
-		background-color: #25d366;
-		border-radius: 50%;
-		border: 2px solid #fff;
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-	}
-
 	.audio-message audio::-webkit-media-controls-volume-control-container,
 	.audio-message audio::-webkit-media-controls-volume-slider-container,
 	.audio-message audio::-webkit-media-controls-overflow-menu-button {
