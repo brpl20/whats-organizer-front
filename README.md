@@ -1,5 +1,7 @@
 # create-svelte..
 
+[**Documentação do projeto na Wiki**](https://github.com/brpl20/whats-organizer-front/wiki)
+
 Everything you need to build a Svelte project, . powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
 
 ## Creating a project
