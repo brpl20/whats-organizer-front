@@ -53,6 +53,7 @@
 	 * @property {number=} height
 	 * @property {number=} duration
 	 * @property {string=} thumbnail
+	 * @property {string[]} links
 	 */
 	/** @type {Message[]} */
 	let messages = [];
@@ -137,9 +138,16 @@
 		switch (ext) {
 			case 'pdf':
 				return 'application/pdf';
-			case 'docx':
-			case 'docm': // docx + macros enabled
-				return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+				case 'docx':
+		    case 'docm':
+		    case 'doc':
+		        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+		    case 'pptx':
+		    case 'ppt':
+		        return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+		    case 'xlsx':
+		    case 'xls':
+		        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 			case 'jpg':
 			case 'jpeg':
 				return 'image/jpeg';
@@ -256,7 +264,9 @@
 	/** @param {SubmitEvent} ev */
 	async function handleSubmit(ev) {
 		ev.preventDefault();
-		const elements = /** @type {HTMLFormControlsCollection} */ (ev.target.elements);
+		/** @type { { target: {elements: HTMLCollection & HTMLInputElement } } */
+		const {target} = ev;
+		const elements = target.elements;
 		const fileInput = elements?.[1];
 		const files = /** @type {FileList} */ (fileInput.files);
 
@@ -391,7 +401,7 @@
 
 	/** @param {SubmitEvent} ev */
 	const handleMessageInjection = (ev) => {
-		/** @type { { target: {value: string} } } */
+		/** @type { { target: HTMLInputElement } } */
 		const { target } = ev;
 		const { value } = target || {};
 		if (!value) return;
@@ -438,8 +448,11 @@
 	 * @param {Event & {currentTarget: EventTarget & HTMLInputElement}} e
 	 */
 	const handleBackendFileInjection = (e) => {
+		/** @type { { target: HTMLInputElement } } */
+		const { target } = e;
+		const evFiles = target.files;
 		/** @type {File} */
-		const injectedFile = e.target.files[0];
+		const injectedFile = evFiles[0];
 		extractMessagesJson(injectedFile).then((m) => (messages = m));
 		processConversation(injectedFile);
 	};
@@ -505,7 +518,7 @@
 											<div class="thumbnail-container">
 												<img
 													src={link}
-													alt="PDF"
+													alt="Arquivo de Documento"
 													class="thumbnail-pdf {message.links[index + 1] === 'landscape'
 														? 'landscape'
 														: 'portrait'}"
