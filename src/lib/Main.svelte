@@ -346,7 +346,7 @@
 		try {
 			const formData = new FormData();
 			const zipFile = files[0];
-			const fileWithMessages = addMessagesJson(zipFile);
+			const fileWithMessages = await addMessagesJson(zipFile);
 
 			formData.append('file', fileWithMessages);
 
@@ -431,8 +431,9 @@
 			printError = null;
 			isLoading = true;
 			showPDFButton = false;
+			/** @type {File} */
 			const injectedFile = e.target.files[0]
-			extractMessagesJson()
+			extractMessagesJson(injectedFile)
 				.then(m => messages = m);
 			processConversation(injectedFile);
 	}
@@ -641,7 +642,6 @@
 		}
 	}
 
-	[data-testid='playwright-inject-chat'],
 	[data-testid='playwright-inject-media'] {
 		display: none;
 	}
