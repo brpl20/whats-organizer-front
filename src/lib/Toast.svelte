@@ -44,7 +44,7 @@
 
 	$: if (prevText !== text) {
 	    prevText = text;
-    	if (removed) {
+    	if (removed && text) {
     	    removed = false;
     	    internallyDismissed = true;
     	    setTimeout(() => internallyDismissed = false, 300);
