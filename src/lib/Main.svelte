@@ -1,6 +1,5 @@
 <script>
 	import { fade } from 'svelte/transition';
-	import Pre from '$lib/Pre.svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import UploadButton from './UploadButton.svelte';
 	import { onDestroy } from 'svelte';
@@ -8,6 +7,7 @@
 	import Audio from './ChatComponents/Audio.svelte';
 	import Toast from './Toast.svelte';
 	import PrintSvg from './PrinterSvg.svelte';
+	import ErrorSvg from './ErrorSvg.svelte'
 
 	/** Timeout caso o socketio não consiga conectar */
 	const socketConnTimeout = 5000;
@@ -20,7 +20,6 @@
 	/** @type {string=}*/
 	let error = null;
 	/** @type {string=}*/
-	let printError = null;
 	let showLimitacoesModal = false;
 	let showLGPDModal = false;
 	/**
@@ -289,7 +288,7 @@
 		}
 
 		error = null;
-		printError = null;
+		
 		isLoading = true;
 		messages = null;
 		result = null;
@@ -358,11 +357,9 @@
 	};
 
 	async function generatePDF() {
-		let printError = null;
-
 		if (!chatContainer) {
 			console.error('Chat container not found');
-			printError = 'Não há chat para imprimir';
+			error = 'Não há chat para imprimir';
 			return;
 		}
 		isPrinting = true;
@@ -381,8 +378,8 @@
 			});
 
 			if (!response.ok) {
-				printError = 'Erro ao gerar o PDF';
-				console.error(printError, await response.text());
+				error = 'Erro ao gerar o PDF';
+				console.error(error, await response.text());
 				throw new Error();
 			}
 			isPrinting = false;
@@ -398,9 +395,9 @@
 			document.body.removeChild(a);
 
 			URL.revokeObjectURL(url);
-		} catch (error) {
-			printError = 'Erro ao conectar ao servidor';
-			console.error(printError, error);
+		} catch (e) {
+			error = 'Erro ao conectar ao servidor';
+			console.error(error, e);
 		} finally {
 			isPrinting = false;
 		}
@@ -465,6 +462,8 @@
 	};
 </script>
 
+<Toast svg={PrintSvg} text={socketMessages[0] || "Enviando Solicitação"} toastId="pdfprint" closed={!isPrinting} />
+<Toast svg={ErrorSvg} text={error} error closed={!error} />
 <main>
 	<h1>WhatsOrganizer</h1>
 
@@ -484,21 +483,12 @@
 			{/each}
 		</ul>
 	{/if}
-	<Toast svg={PrintSvg} text={socketMessages[0] || "Enviando Solicitação"} toastId="pdfprint" dismiss={!isPrinting} />
 	<form class="file-zip" on:submit={handleSubmit}>
 		<UploadButton on:update={updateFiles} />
 		<button type="submit" disabled={isLoading}>
 			{isLoading ? 'Processando...' : 'Enviar'}
 		</button>
 	</form>
-
-	{#if error}
-		<p class="error">{error}</p>
-	{/if}
-
-	{#if printError}
-		<p class="error">{error}</p>
-	{/if}
 
 	<input
 		data-testid="playwright-inject-media"
@@ -806,10 +796,6 @@
 		justify-content: center;
 		gap: 20px;
 		margin-bottom: 20px;
-	}
-
-	.error {
-		color: red;
 	}
 
 	.modal-backdrop {

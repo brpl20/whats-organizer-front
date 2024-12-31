@@ -1,5 +1,4 @@
 <script>
-	import { onDestroy, onMount } from 'svelte';
 	import CloseSvg from './CloseSvg.svelte';
 
 	/**
@@ -7,8 +6,8 @@
 	 * @property {() => SvelteComponent=} [svg]
 	 * @property {string} text
 	 * @property {string} toastId
-	 * @property {() => void} [onDismiss]
-	 * @property {boolean} dismiss
+	 * @property {() => void} [onClose]
+	 * @property {boolean} closed
 	 */
 
 	/**
@@ -27,48 +26,78 @@
 	export let toastId = '';
 
 	/**
-	 * @type {ToastProps['onDismiss']}
+	 * @type {ToastProps['onClose']}
 	 */
-	export let onDismiss = () => undefined;
+	export let onClose = () => undefined;
 
-	export let dismiss = false;
+	export let closed = false;
 
-	/** @type {true|''}*/
-	let isVisible;
+	export let error = false;
 
+	export let internallyDismissed = false;
 
-	$: if(dismiss) {
-		onDismiss()
-		isVisible = ''
-	} else { 
-		isVisible = true;
+	export let removed = false;
+
+	const requestAnimatedDismiss = () => timeout = setTimeout(() => (removed = true), 300);
+
+	let prevText = ''
+
+	$: if (prevText !== text) {
+	    prevText = text;
+    	if (removed) {
+    	    removed = false;
+    	    internallyDismissed = true;
+    	    setTimeout(() => internallyDismissed = false, 300);
+    	}
 	}
 
+	$: if (closed) requestAnimatedDismiss();
+
+	/** @type {NodeJS.Timeout}*/
+	let timeout = null;
+
+	const onDismiss = () => {
+		internallyDismissed = true;
+		requestAnimatedDismiss();
+		onClose();
+	};
 </script>
 
-<div class="toast-container">
-	<div id={`toast-${toastId}`} class="toast {isVisible && 'visible'}" role="alert">
-		<div class="icon-container">
-			<svelte:component this={svg} />
-			<span class="sr-only">Notificação</span>
+{#if !removed}
+	<div class="toast-container">
+		<div
+			id={`toast-${toastId}`}
+			class="toast
+					{!(closed || internallyDismissed) ? 'visible' : ''}
+					{error ? 'error' : ''}
+			"
+			role="alert"
+		>
+			<div class="icon-container">
+				<svelte:component this={svg} />
+				<span class="sr-only">{error ? 'Erro' : 'Notificação'}</span>
+			</div>
+			<div class="toast-text">{text}</div>
+			<button type="button" class="close-button" on:click={onDismiss} aria-label="Close">
+				<span class="sr-only">Close</span>
+				<CloseSvg />
+			</button>
 		</div>
-		<div class="toast-text">{text}</div>
-		<button type="button" class="dismiss-button" on:click={onDismiss} aria-label="Close">
-			<span class="sr-only">Close</span>
-			<CloseSvg />
-		</button>
 	</div>
-</div>
+{/if}
 
 <style>
 	.toast-container {
 		position: fixed;
 		z-index: 10;
-		top: 2rem;
 		left: 50%;
 		transform: translate(-50%, 0);
 		width: auto;
 		height: auto;
+		backface-visibility: hidden;
+		contain: layout;
+		isolation: isolate;
+		will-change: transform;
 	}
 
 	.toast {
@@ -84,6 +113,12 @@
 		border: 1px solid #94a3b8;
 		opacity: 0;
 		transition: opacity 300ms;
+	}
+
+	.toast.error {
+		color: #5f0616;
+		border: 1px solid #f897a9;
+		background-color: #ffe9e4;
 	}
 
 	.toast.visible {
@@ -102,13 +137,18 @@
 		border-radius: 0.5rem;
 	}
 
+	.error .icon-container {
+		background-color: #ffcdc1;
+		color: #3b82f6;
+	}
+
 	.toast-text {
 		margin-left: 1.5rem;
 		font-size: 0.875rem;
 		font-weight: 400;
 	}
 
-	.dismiss-button {
+	.close-button {
 		margin-left: auto;
 		margin-right: -0.375rem;
 		margin-top: -0.375rem;
@@ -123,14 +163,18 @@
 		height: 2rem;
 		width: 2rem;
 		cursor: pointer;
-		transition:
-			background-color 200ms,
-			color 200ms;
+		transition-property: color background-color;
+		transition-duration: 0.2s;
+		transition-timing-function: linear;
 	}
 
-	.dismiss-button:hover {
+	.close-button:hover {
 		background-color: #f3f4f6;
 		color: #111827;
+	}
+
+	.error .close-button:hover {
+		background-color: #fffaf9;
 	}
 
 	.sr-only {
