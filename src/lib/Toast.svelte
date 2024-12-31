@@ -62,7 +62,7 @@
 
 <style>
 	.toast-container {
-		position: absolute;
+		position: fixed;
 		z-index: 10;
 		top: 2rem;
 		left: 50%;
