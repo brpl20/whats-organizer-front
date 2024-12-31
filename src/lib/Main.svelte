@@ -141,12 +141,15 @@
 				case 'docx':
 		    case 'docm':
 		    case 'doc':
+			case 'odt':
 		        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 		    case 'pptx':
 		    case 'ppt':
+			case 'odp':
 		        return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 		    case 'xlsx':
 		    case 'xls':
+			case 'ods':
 		        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 			case 'jpg':
 			case 'jpeg':
@@ -229,7 +232,11 @@
 
 	async function connectSocket() {
 		socketMessages = [];
-		if (socket) return;
+		/**
+		 * Socket.active, if socket still retrying to connect
+		 * Socket.connected if the socket is currently connected
+		 */
+		if (socket?.active) return;
 
 		io ??= (await import('socket.io-client')).default;
 		socket ??= io(PUBLIC_API_URL, {
