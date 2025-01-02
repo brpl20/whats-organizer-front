@@ -1,13 +1,14 @@
 <script>
+	import { onDestroy } from 'svelte';
 	import CloseSvg from './CloseSvg.svelte';
 
 	/**
 	 * @typedef {object} ToastProps
 	 * @property {() => SvelteComponent=} [svg]
-	 * @property {string} text
-	 * @property {string} toastId
-	 * @property {() => void} [onClose]
+	 * @property {string} text - Se for falseável, toast não aparece
+=	 * @property {() => void} [onClose]
 	 * @property {boolean} closed
+	 * @property {boolean} error - Layout vermelho se true
 	 */
 
 	/**
@@ -21,43 +22,79 @@
 	export let text = '';
 
 	/**
-	 * @type {ToastProps['toastId']}
-	 */
-	export let toastId = '';
-
-	/**
 	 * @type {ToastProps['onClose']}
 	 */
 	export let onClose = () => undefined;
 
+		/**
+	 * @type {ToastProps['closed']}
+	 */
 	export let closed = false;
 
+	/**
+	 * @type {ToastProps['error']}
+	 */
 	export let error = false;
 
-	export let internallyDismissed = false;
+	/**
+	 * Se dispensado no CSS (Geralmente dispensado uns millisegundos
+	 * antes de removed, para mostrar a animação de fade sumindo
+	 */
+	let internallyDismissed = false;
 
-	export let removed = false;
+	/**
+	 * Elemento removido do HTML (Após a animação CSS)
+	 */
+	let removed = false;
 
-	const requestAnimatedDismiss = () => timeout = setTimeout(() => (removed = true), 300);
+	const clearInternalTimeout = () => typeof timeout === 'number' && clearTimeout(timeout);
 
-	let prevText = ''
+	const requestAnimatedDismiss = () => {
+		internallyDismissed = true;
+		clearInternalTimeout();
+		timeout = setTimeout(() => (removed = true), 300);
+	};
 
-	$: if (prevText !== text) {
-	    prevText = text;
-    	if (removed && text) {
-    	    removed = false;
-    	    internallyDismissed = true;
-    	    setTimeout(() => internallyDismissed = false, 300);
-    	}
+	/** insere no DOM com opacity 0 e inicia transition opacity 100% */
+	const requestAnimatedPopup = () => {
+		if (!text) return;
+
+		removed = false;
+		internallyDismissed = true;
+
+		clearInternalTimeout();
+		timeout = setTimeout(() => (internallyDismissed = false), 300);
+	}; 
+
+	let prevText = '';
+
+	/*
+	 * Inicia a animação de entrada da toast caso o texto tenha mudado
+	 * mas a toast tenha sido dispensada internamente com o botão de
+	 * fechar, dessa forma, a toast nova com texto novo deve aparecer
+	 */
+	const showNewToast = () => {
+		const previouslyInternallyDismissed = removed && !closed;
+		if (!previouslyInternallyDismissed) return;
+
+		requestAnimatedPopup();
 	}
 
+	$: if (prevText !== text) {
+		prevText = text;
+		showNewToast();
+	}
+
+	/** Inicia/ finaliza a animação caso requisitado pelo componente pai */
 	$: if (closed) requestAnimatedDismiss();
+	$: if (!closed) requestAnimatedPopup();
+
+	onDestroy(clearInternalTimeout);
 
 	/** @type {NodeJS.Timeout}*/
 	let timeout = null;
 
 	const onDismiss = () => {
-		internallyDismissed = true;
 		requestAnimatedDismiss();
 		onClose();
 	};
@@ -66,9 +103,8 @@
 {#if !removed}
 	<div class="toast-container">
 		<div
-			id={`toast-${toastId}`}
 			class="toast
-					{!(closed || internallyDismissed) ? 'visible' : ''}
+					{closed || internallyDismissed ? '' : 'visible'}
 					{error ? 'error' : ''}
 			"
 			role="alert"
@@ -77,7 +113,7 @@
 				<svelte:component this={svg} />
 				<span class="sr-only">{error ? 'Erro' : 'Notificação'}</span>
 			</div>
-			<div class="toast-text">{text}</div>
+			<div class="toast-text">{error ? (text || "Erro Desconhecido!") : (text || "")}</div>
 			<button type="button" class="close-button" on:click={onDismiss} aria-label="Close">
 				<span class="sr-only">Close</span>
 				<CloseSvg />
@@ -95,9 +131,7 @@
 		width: auto;
 		height: auto;
 		backface-visibility: hidden;
-		contain: layout;
-		isolation: isolate;
-		will-change: transform;
+		margin-top: 1rem;
 	}
 
 	.toast {
