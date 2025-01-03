@@ -3,12 +3,7 @@
 	import CloseSvg from './CloseSvg.svelte';
 
 	/**
-	 * @typedef {object} ToastProps
-	 * @property {() => SvelteComponent=} [svg]
-	 * @property {string} text - Se for falseável, toast não aparece
-=	 * @property {() => void} [onClose]
-	 * @property {boolean} closed
-	 * @property {boolean} error - Layout vermelho se true
+	 * @typedef {import('./types/toast.type.js').ToastProps} ToastProps
 	 */
 
 	/**
@@ -46,6 +41,8 @@
 	 * Elemento removido do HTML (Após a animação CSS)
 	 */
 	let removed = false;
+
+	$: if (removed) onClose?.();
 
 	const clearInternalTimeout = () => typeof timeout === 'number' && clearTimeout(timeout);
 
@@ -96,7 +93,6 @@
 
 	const onDismiss = () => {
 		requestAnimatedDismiss();
-		onClose();
 	};
 </script>
 

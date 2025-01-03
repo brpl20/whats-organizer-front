@@ -6,8 +6,17 @@
 	import Video from './ChatComponents/Video.svelte';
 	import Audio from './ChatComponents/Audio.svelte';
 	import Toast from './Toast.svelte';
+	import TranscribeSvg from './TranscribeSvg.svelte';
 	import PrintSvg from './PrinterSvg.svelte';
-	import ErrorSvg from './ErrorSvg.svelte'
+	import ErrorSvg from './ErrorSvg.svelte';
+	/**
+	 * @typedef {import('./types/toast.type.js').ToastTypes} ToastTypes
+	 * @typedef {import('./types/toast.type.js').ToastProps} ToastProps
+	 * @typedef {import('jszip')=} JsZip
+	 * @typedef {import('mammoth')=} Mammoth
+	 * @typedef {import('socket.io-client').default=} SocketIo
+	 * @typedef {import('socket.io-client').Socket<DefaultEventsMap, DefaultEventsMap>=} SocketType
+	 */
 
 	/** Timeout caso o socketio não consiga conectar */
 	const socketConnTimeout = 5000;
@@ -15,10 +24,6 @@
 	/** @type {HTMLDivElement=}*/
 	let chatContainer = null;
 
-	let isLoading = false;
-	let isPrinting = false;
-	/** @type {string=}*/
-	let error = null;
 	/** @type {string=}*/
 	let showLimitacoesModal = false;
 	let showLGPDModal = false;
@@ -56,23 +61,51 @@
 	 */
 	/** @type {Message[]} */
 	let messages = [];
-	/** @type {string[]} */
-	let socketMessages = [];
-	let showPDFButton = false;
 	/** @type {FileList=} */
 	let files = null;
+
+	/** @type {Pick<ToastProps, 'text' | 'onClose'> & {type: Exclude<ToastTypes, 'all'>}} */
+	let toast = {
+		text: null,
+		type: 'transcribe'
+	};
+	let loading = false;
+
+	/** @type {Record<ToastTypes, ToastProps>} */
+	const toastMap = {
+		transcribe: {
+			svg: TranscribeSvg
+		},
+		print: {
+			svg: PrintSvg
+		},
+		error: {
+			svg: ErrorSvg,
+			error: true
+		}
+	};
+
+	/** @type {Record<ToastTypes, ToastProps>} */
+	$: toastProps = {
+		...toastMap[toast.type],
+
+		text: toast.text,
+		closed: ['transcribe', 'print'].includes(toast.type) ? !loading : loading,
+		onClose: toast.onClose
+	};
+
 	/** @param {CustomEvent<FileList>} event */
 	const updateFiles = (event) => (files = event.detail);
 
 	/** Optimize import on-demand for heavy libs */
-	/** @type {import('jszip')=} */
+	/** @type {JsZip} */
 	let JSZip = null;
-	/** @type {import('mammoth')=} */
+	/** @type {Mammoth} */
 	let mammoth = null;
-	/** @type {import('socket.io-client').default=}*/
+	/** @type {SocketIo} */
 	let io = null;
 
-	/** @type {import('socket.io-client').Socket<DefaultEventsMap, DefaultEventsMap>=}*/
+	/** @type {SocketType} */
 	let socket = null;
 
 	onDestroy(() => socket?.disconnect?.());
@@ -97,9 +130,13 @@
 				})
 			);
 
-			showPDFButton = true;
+			toast = {
+				...toast,
+				type: 'transcribe',
+				onClose: () => (toast = { text: null, type: 'print' })
+			};
 		})().finally(() => {
-			isLoading = false;
+			loading = false;
 		});
 
 	/** @param {File} file */
@@ -123,8 +160,11 @@
 		processZipFile(file)
 			.then((urls) => processMessages(urls))
 			.catch((e) => {
-				error = 'Falhou ao Processar o Arquivo ZIP, Verifique se o arquivo é Válido.';
-				isLoading = false;
+				toast = {
+					type: 'error',
+					text: 'Falhou ao Processar o Arquivo ZIP, Verifique se o arquivo é Válido.'
+				};
+				loading = false;
 				console.error(e);
 			});
 	};
@@ -137,19 +177,19 @@
 		switch (ext) {
 			case 'pdf':
 				return 'application/pdf';
-				case 'docx':
-		    case 'docm':
-		    case 'doc':
+			case 'docx':
+			case 'docm':
+			case 'doc':
 			case 'odt':
-		        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-		    case 'pptx':
-		    case 'ppt':
+				return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+			case 'pptx':
+			case 'ppt':
 			case 'odp':
-		        return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-		    case 'xlsx':
-		    case 'xls':
+				return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+			case 'xlsx':
+			case 'xls':
 			case 'ods':
-		        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+				return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 			case 'jpg':
 			case 'jpeg':
 				return 'image/jpeg';
@@ -230,7 +270,10 @@
 		});
 
 	async function connectSocket() {
-		socketMessages = [];
+		toast = {
+			...toast,
+			text: null
+		};
 		/**
 		 * Socket.active, if socket still retrying to connect
 		 * Socket.connected if the socket is currently connected
@@ -252,18 +295,14 @@
 		);
 
 		Promise.race([connect, timeout]).catch((e) => {
-			socketMessages = ['Carregando...'];
+			toast = { ...toast, text: 'Carregando...' };
 			console.error(e);
 		});
 
 		socket.on('Smessage', (data) => {
 			console.log('Server message:', data);
 			if (!data?.data) return;
-			if (isPrinting) {
-				socketMessages = [data.data]
-				return
-			} // else
-			socketMessages = [...socketMessages, data.data];
+			toast = { ...toast, text: data.data };
 		});
 	}
 
@@ -271,28 +310,29 @@
 	async function handleSubmit(ev) {
 		ev.preventDefault();
 		/** @type { { target: {elements: HTMLCollection & HTMLInputElement } } */
-		const {target} = ev;
+		const { target } = ev;
 		const elements = target.elements;
 		const fileInput = elements?.[1];
 		const files = /** @type {FileList} */ (fileInput.files);
 
 		if (!files?.length) {
-			error = 'Por favor selecione um arquivo zip antes.';
+			toast = { type: 'error', text: 'Por favor selecione um arquivo zip antes.' };
 			return;
 		}
 
 		const file = files[0];
 		if (!file.name.endsWith('.zip')) {
-			error = 'Please select a ZIP file.';
+			toast = { type: 'error', text: 'Please select a ZIP file.' };
 			return;
 		}
 
-		error = null;
-		
-		isLoading = true;
+		loading = true;
 		messages = null;
 		result = null;
-		showPDFButton = false;
+		toast = {
+			text: 'Iniciando Transcrição',
+			type: 'transcribe'
+		};
 
 		connectSocket();
 
@@ -304,24 +344,27 @@
 			body: formData
 		}).catch((e) => {
 			console.error(e);
-			error = 'Falhou ao Enviar o Arquivo, Verifique Sua Conexão.';
-			isLoading = false;
+			toast = {
+				type: 'error',
+				text: 'Falhou ao Enviar o Arquivo, Verifique Sua Conexão.'
+			};
+			loading = false;
 		});
 		if (!response) return;
 
 		if (!response.ok) {
-			error = 'Falhou ao Enviar o Arquivo, Verifique Sua Conexão.';
-			isLoading = false;
+			toast = { type: 'error', text: 'Falhou ao Enviar o Arquivo, Verifique Sua Conexão.' };
+			loading = false;
 			console.error(`HTTP error! status: ${response.status}`);
 		}
 
 		result = await response.json();
 		if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
-			error = result[0].ERRO;
+			toast = { resultype: 'error', text: t[0].ERRO };
 			return;
 		} // else
 		if (!Array.isArray(result) && result.Erro) {
-			error = result.Erro;
+			toast = { resultype: 'error', text: t.Erro };
 			return;
 		}
 		messages = result;
@@ -359,10 +402,14 @@
 	async function generatePDF() {
 		if (!chatContainer) {
 			console.error('Chat container not found');
-			error = 'Não há chat para imprimir';
+			toast = { type: 'error', text: 'Não há chat para imprimir' };
 			return;
 		}
-		isPrinting = true;
+		toast = {
+			text: 'Iniciando Impressão',
+			type: 'print'
+		};
+		loading = true;
 		connectSocket();
 
 		try {
@@ -378,11 +425,11 @@
 			});
 
 			if (!response.ok) {
-				error = 'Erro ao gerar o PDF';
+				toast = { type: 'error', text: 'Erro ao gerar o PDF' };
 				console.error(error, await response.text());
-				throw new Error();
+				return;
 			}
-			isPrinting = false;
+			loading = false;
 
 			const blob = await response.blob();
 			const url = URL.createObjectURL(blob);
@@ -396,10 +443,10 @@
 
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			error = 'Erro ao conectar ao servidor';
+			toast = { type: 'error', text: 'Erro ao conectar ao servidor' };
 			console.error(error, e);
 		} finally {
-			isPrinting = false;
+			loading = false;
 		}
 	}
 
@@ -462,8 +509,7 @@
 	};
 </script>
 
-<Toast svg={PrintSvg} text={socketMessages[0] || "Enviando Solicitação"} toastId="pdfprint" closed={!isPrinting} />
-<Toast svg={ErrorSvg} text={error} error closed={!error} />
+<Toast {...toastProps} />
 <main>
 	<h1>WhatsOrganizer</h1>
 
@@ -472,21 +518,10 @@
 		e transcreva áudios de forma rápida e<br />
 		segura de uma única vez
 	</p>
-	{#if isLoading}
-		<div class="spinner-container">
-			<div class="spinner"></div>
-			<h2>Processando...</h2>
-		</div>
-		<ul>
-			{#each socketMessages as smessage}
-				<li class="smessage-li">{smessage}</li>
-			{/each}
-		</ul>
-	{/if}
 	<form class="file-zip" on:submit={handleSubmit}>
-		<UploadButton on:update={updateFiles} />
-		<button type="submit" disabled={isLoading}>
-			{isLoading ? 'Processando...' : 'Enviar'}
+		<UploadButton on:update={updateFiles} {loading} />
+		<button type="submit" disabled={loading}>
+			{loading ? 'Processando...' : 'Enviar'}
 		</button>
 	</form>
 
@@ -577,9 +612,9 @@
 		<button class="secondary" on:click={toggleLGPDModal}>LGPD</button>
 	</div>
 
-	{#if showPDFButton}
-		<button class="floating-button loading-button" on:click={generatePDF}>
-			{#if isPrinting}
+	{#if toast.type === 'print'}
+		<button class="floating-button loading-button" on:click={generatePDF} disabled={loading}>
+			{#if loading}
 				<div class="spinner-container sm-spinner-container">
 					<div class="spinner sm-spinner" />
 				</div>
@@ -673,17 +708,17 @@
 		font-family: Arial, sans-serif;
 		list-style-type: none;
 	}
-	.smessage-li {
-		text-align: center;
-	}
-	.spinner-container {
+
+	.spinner-container,
+	.file-zip :global(.spinner-container) {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		gap: 10px;
 		text-align: center;
 	}
-	.spinner {
+	.spinner,
+	.file-zip :global(.spinner) {
 		width: 50px;
 		aspect-ratio: 1;
 		display: grid;
@@ -693,7 +728,9 @@
 		animation: l15 1s infinite linear;
 	}
 	.spinner::before,
-	.spinner::after {
+	.spinner::after,
+	.file-zip :global(.spinner::after),
+	.file-zip :global(.spinner::before) {
 		content: '';
 		grid-area: 1/1;
 		margin: 2px;
@@ -701,7 +738,8 @@
 		border-radius: 50%;
 		animation: l15 2s infinite;
 	}
-	.spinner::after {
+	.spinner::after,
+	.file-zip :global(.spinner::after) {
 		margin: 8px;
 		animation-duration: 3s;
 	}
