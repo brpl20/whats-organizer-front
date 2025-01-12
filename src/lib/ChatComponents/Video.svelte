@@ -19,18 +19,21 @@
 
 	$: if (video && canvas && !loadListener) {
 		loadListener = () => {
-			const ctx = canvas.getContext('2d');
-			canvas.width = video.videoWidth;
-			canvas.height = video.videoHeight;
-
 			const renderFrame = (rendered = false) => {
-				if (!video) return
+				if (!video?.videoWidth || !video?.videoHeight) return
+				const ctx = canvas.getContext('2d');
+				canvas.width = video.videoWidth;
+				canvas.height = video.videoHeight;
+
 				if (rendered) requestAnimationFrame(() => {
 					renderedThumb = true;
 				});
+
+				// const proportion = video.videoWidth / video.videoHeight;
 				ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 				requestAnimationFrame(() => renderFrame(true));
 			};
+
 			try {
 				renderFrame();
 			} catch (e) {
@@ -65,6 +68,7 @@
 <style>
 	video {
 		display: block;
+		aspect-ratio: 1;
 	}
 
 	.video-thumb {
@@ -76,7 +80,7 @@
 	.video-thumb,
 	canvas {
 		max-width: 100%;
-		height: auto;
+		height: 400px;
 		overflow: hidden;
 	}
 
@@ -108,7 +112,9 @@
 			display: none !important;
 		}
 		.video-thumb {
-			display: inline-block !important;
+			display: flex !important;
+			justify-content: center;
+			aspect-ratio: 1;
 		}
 	}
 </style>

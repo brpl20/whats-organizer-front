@@ -535,34 +535,36 @@
 	{#if messages?.length > 0}
 		<div class="chat-container" data-testid="playwright-chat" bind:this={chatContainer}>
 			{#each messages as message}
-				<div class="message-wrapper {message.ID === 1 ? 'left' : 'right'}">
+				{@const attachedPdfMsg = message.FileAttached && message.links}
+				{@const isLongMessage = message?.links?.length > 4 || message?.Message?.length > 900}
+				<div
+					class="message-wrapper {message.ID === 1 ? 'left' : 'right'} {!isLongMessage
+						? 'avoid-pdf-break'
+						: ''}"
+				>
 					<div class="message-bubble">
 						<div class="message-header">
 							<span class="message-name">{message.Name}</span>
 							<span class="message-time">{message.Time}</span>
 						</div>
 						{#if message.FileAttached}
-							{#if message.links}
-								<div class="thumbnails">
-									<div class="filename">{getFileName(message.FileAttached)}</div>
-									{#each message.links as link, index}
-										{#if index % 2 === 0}
-											<div class="thumbnail-container">
-												<img
-													src={link}
-													alt="Arquivo de Documento"
-													class="thumbnail-pdf {message.links[index + 1] === 'landscape'
-														? 'landscape'
-														: 'portrait'}"
-												/>
-											</div>
-										{/if}
-									{/each}
-									<span class="small-description"
-										>Imagens apenas ilustrativas, confira os arquivos originais, demonstrando no 6
-										miniaturas máximo.</span
-									>
-								</div>
+							{#if attachedPdfMsg}
+								<div class="filename">{getFileName(message.FileAttached)}</div>
+								{#each message.links as link, index}
+									{#if !(index % 2)}
+										<img
+											src={link}
+											alt="Página do Documento Anexado"
+											class="thumbnail-pdf avoid-pdf-break {message.links[index + 1] === 'landscape'
+												? 'landscape'
+												: 'portrait'}"
+										/>
+									{/if}
+								{/each}
+								<span class="small-description"
+									>Imagens apenas ilustrativas, confira os arquivos originais, demonstrando no 6
+									miniaturas máximo.</span
+								>
 							{/if}
 							{#if isAudioFile(message.FileAttached)}
 								<Audio
@@ -691,7 +693,7 @@
 			margin: 0 !important;
 		}
 
-		.message-wrapper {
+		.avoid-pdf-break {
 			break-inside: avoid;
 		}
 
