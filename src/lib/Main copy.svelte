@@ -473,6 +473,7 @@
 
   .message-text {
     margin: 0;
+    word-break: break-word;
   }
 
   .message-date {
