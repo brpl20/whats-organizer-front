@@ -64,7 +64,10 @@
 	/** @type {FileList=} */
 	let files = null;
 
-	/** @type {Pick<ToastProps, 'text' | 'onClose'> & {type: Exclude<ToastTypes, 'all'>}} */
+	/**
+	 * @typedef {Pick<ToastProps, 'text' | 'onClose'> & {type: Exclude<ToastTypes, 'all'>}} ToastType
+	 * @type {ToastType}
+	 */
 	let toast = {
 		text: null,
 		type: 'transcribe'
@@ -91,8 +94,18 @@
 		...toastMap[toast.type],
 
 		text: toast.text,
-		closed: ['transcribe', 'print'].includes(toast.type) ? !loading : loading,
+		closed: !toast.text,
 		onClose: toast.onClose
+	};
+
+	/** @param {ToastTypes} newType */
+	const removeToast = (newType) =>
+		(toast = { ...toast, text: null, ...(newType && { type: newType }) });
+
+	/** @param {ToastType} newToast */
+	const changeToast = (newToast) => {
+		removeToast();
+		setTimeout(() => (toast = newToast), 220);
 	};
 
 	/** @param {CustomEvent<FileList>} event */
@@ -131,10 +144,7 @@
 				})
 			);
 
-			toast = {
-				text: null,
-				type: 'print'
-			};
+			removeToast('print');
 		})();
 
 	/** @param {File} file */
@@ -153,17 +163,17 @@
 		return Promise.all(urls);
 	}
 
-	const verifyFileErr = 'Erro ao Processar, Verifique o Arquivo.'
+	const verifyFileErr = 'Erro ao Processar, Verifique o Arquivo.';
 
 	/** @param {File} file */
 	const processConversation = (file) => {
 		processZipFile(file)
 			.then((urls) => processMessages(urls))
 			.catch((e) => {
-				toast = {
+				changeToast({
 					type: 'error',
-					text: verifyFileErr,
-				};
+					text: verifyFileErr
+				});
 				console.error(e);
 			});
 	};
@@ -269,15 +279,11 @@
 		});
 
 	async function connectSocket() {
-		toast = {
-			...toast,
-			text: null
-		};
 		/**
 		 * Socket.active, if socket still retrying to connect
 		 * Socket.connected if the socket is currently connected
 		 */
-		if (socket?.active) return;
+		if (socket?.connected) return;
 
 		io ??= (await import('socket.io-client')).default;
 		socket ??= io(PUBLIC_API_URL, {
@@ -299,9 +305,13 @@
 		});
 
 		socket.on('Smessage', (data) => {
-			console.log('%c Server message:', 'background-color: #233142; color: #fdffcd; display: grid; place-items: center;', data);
 			if (!data?.data) return;
-			toast = { ...toast, text: data.data };
+			console.log(
+				'%c Server message:',
+				'background-color: #233142; color: #fdffcd; display: grid; place-items: center;'
+			);
+			console.table(data);
+			changeToast({ ...toast, text: data.data });
 		});
 	}
 
@@ -315,22 +325,22 @@
 		const files = /** @type {FileList} */ (fileInput.files);
 
 		if (!files?.length) {
-			toast = { type: 'error', text: 'Por favor selecione um arquivo zip antes.' };
+			changeToast({ type: 'error', text: 'Por favor selecione um arquivo zip antes.' });
 			return;
 		}
 
 		const file = files[0];
 		if (!file.name.endsWith('.zip')) {
-			toast = { type: 'error', text: 'Please select a ZIP file.' };
+			changeToast({ type: 'error', text: 'Please select a ZIP file.' });
 			return;
 		}
 
 		messages = null;
 		result = null;
-		toast = {
+		changeToast({
 			text: 'Iniciando Transcrição',
 			type: 'transcribe'
-		};
+		});
 
 		connectSocket();
 
@@ -342,25 +352,25 @@
 			body: formData
 		}).catch((e) => {
 			console.error(e);
-			toast = {
+			changeToast({
 				type: 'error',
 				text: 'Erro ao Enviar o Arquivo, Verifique Sua Conexão.'
-			};
+			});
 		});
 		if (!response) return;
 
 		if (!response.ok) {
-			toast = { type: 'error', text: verifyFileErr };
+			changeToast({ type: 'error', text: verifyFileErr });
 			console.error(`HTTP error! status: ${response.status}`);
 		}
 
 		result = await response.json();
 		if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
-			toast = { type: 'error', text: t[0].ERRO };
+			changeToast({ type: 'error', text: t[0].ERRO });
 			return;
 		} // else
 		if (!Array.isArray(result) && result.Erro) {
-			toast = { type: 'error', text: t.Erro };
+			changeToast({ type: 'error', text: t.Erro });
 			return;
 		}
 		messages = result;
@@ -398,13 +408,13 @@
 	async function generatePDF() {
 		if (!chatContainer) {
 			console.error('Chat container not found');
-			toast = { type: 'error', text: 'Não há chat para imprimir' };
+			changeToast({ type: 'error', text: 'Não há chat para imprimir' });
 			return;
 		}
-		toast = {
+		changeToast({
 			text: 'Iniciando Impressão',
 			type: 'print'
-		};
+		});
 		connectSocket();
 
 		try {
@@ -420,7 +430,7 @@
 			});
 
 			if (!response.ok) {
-				toast = { type: 'error', text: 'Erro ao gerar o PDF' };
+				changeToast({ type: 'error', text: 'Erro ao gerar o PDF' });
 				console.error(error, await response.text());
 				return;
 			}
@@ -437,9 +447,9 @@
 
 			URL.revokeObjectURL(url);
 
-			toast = {...toast, text: null};
+			removeToast();
 		} catch (e) {
-			toast = { type: 'error', text: 'Erro ao conectar ao servidor' };
+			changeToast({ type: 'error', text: 'Erro ao conectar ao servidor' });
 			console.error(error, e);
 		}
 	}
