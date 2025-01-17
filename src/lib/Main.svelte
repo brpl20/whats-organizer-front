@@ -69,7 +69,8 @@
 		text: null,
 		type: 'transcribe'
 	};
-	let loading = false;
+	const loading = !!toast.text && toast.type == 'transcribe';
+	const printLoading = toast.type === 'print' && !loading;
 
 	/** @type {Record<ToastTypes, ToastProps>} */
 	const toastMap = {
@@ -131,13 +132,10 @@
 			);
 
 			toast = {
-				...toast,
-				type: 'transcribe',
-				onClose: () => (toast = { text: null, type: 'print' })
+				text: null,
+				type: 'print'
 			};
-		})().finally(() => {
-			loading = false;
-		});
+		})();
 
 	/** @param {File} file */
 	async function processZipFile(file) {
@@ -155,6 +153,8 @@
 		return Promise.all(urls);
 	}
 
+	const verifyFileErr = 'Erro ao Processar, Verifique o Arquivo.'
+
 	/** @param {File} file */
 	const processConversation = (file) => {
 		processZipFile(file)
@@ -162,9 +162,8 @@
 			.catch((e) => {
 				toast = {
 					type: 'error',
-					text: 'Falhou ao Processar o Arquivo ZIP, Verifique se o arquivo é Válido.'
+					text: verifyFileErr,
 				};
-				loading = false;
 				console.error(e);
 			});
 	};
@@ -295,12 +294,12 @@
 		);
 
 		Promise.race([connect, timeout]).catch((e) => {
-			toast = { ...toast, text: 'Carregando...' };
 			console.error(e);
+			socket = null;
 		});
 
 		socket.on('Smessage', (data) => {
-			console.log('Server message:', data);
+			console.log('%c Server message:', 'background-color: #233142; color: #fdffcd; display: grid; place-items: center;', data);
 			if (!data?.data) return;
 			toast = { ...toast, text: data.data };
 		});
@@ -326,7 +325,6 @@
 			return;
 		}
 
-		loading = true;
 		messages = null;
 		result = null;
 		toast = {
@@ -346,25 +344,23 @@
 			console.error(e);
 			toast = {
 				type: 'error',
-				text: 'Falhou ao Enviar o Arquivo, Verifique Sua Conexão.'
+				text: 'Erro ao Enviar o Arquivo, Verifique Sua Conexão.'
 			};
-			loading = false;
 		});
 		if (!response) return;
 
 		if (!response.ok) {
-			toast = { type: 'error', text: 'Falhou ao Enviar o Arquivo, Verifique Sua Conexão.' };
-			loading = false;
+			toast = { type: 'error', text: verifyFileErr };
 			console.error(`HTTP error! status: ${response.status}`);
 		}
 
 		result = await response.json();
 		if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
-			toast = { resultype: 'error', text: t[0].ERRO };
+			toast = { type: 'error', text: t[0].ERRO };
 			return;
 		} // else
 		if (!Array.isArray(result) && result.Erro) {
-			toast = { resultype: 'error', text: t.Erro };
+			toast = { type: 'error', text: t.Erro };
 			return;
 		}
 		messages = result;
@@ -409,7 +405,6 @@
 			text: 'Iniciando Impressão',
 			type: 'print'
 		};
-		loading = true;
 		connectSocket();
 
 		try {
@@ -429,7 +424,6 @@
 				console.error(error, await response.text());
 				return;
 			}
-			loading = false;
 
 			const blob = await response.blob();
 			const url = URL.createObjectURL(blob);
@@ -442,11 +436,11 @@
 			document.body.removeChild(a);
 
 			URL.revokeObjectURL(url);
+
+			toast = {...toast, text: null};
 		} catch (e) {
 			toast = { type: 'error', text: 'Erro ao conectar ao servidor' };
 			console.error(error, e);
-		} finally {
-			loading = false;
 		}
 	}
 
@@ -616,7 +610,7 @@
 
 	{#if toast.type === 'print'}
 		<button class="floating-button loading-button" on:click={generatePDF} disabled={loading}>
-			{#if loading}
+			{#if printLoading}
 				<div class="spinner-container sm-spinner-container">
 					<div class="spinner sm-spinner" />
 				</div>
