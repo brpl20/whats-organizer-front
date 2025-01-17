@@ -307,10 +307,9 @@
 		socket.on('Smessage', (data) => {
 			if (!data?.data) return;
 			console.log(
-				'%c Server message:',
+				`%c Server message:\n${data.data}`,
 				'background-color: #233142; color: #fdffcd; display: grid; place-items: center;'
 			);
-			console.table(data);
 			changeToast({ ...toast, text: data.data });
 		});
 	}
