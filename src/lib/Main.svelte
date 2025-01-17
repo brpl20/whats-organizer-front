@@ -105,7 +105,7 @@
 	/** @param {ToastType} newToast */
 	const changeToast = (newToast) => {
 		removeToast();
-		setTimeout(() => (toast = newToast), 220);
+		setTimeout(() => (toast = newToast), 120);
 	};
 
 	/** @param {CustomEvent<FileList>} event */
