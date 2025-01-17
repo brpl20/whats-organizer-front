@@ -102,12 +102,6 @@
 	const removeToast = (newType) =>
 		(toast = { ...toast, text: null, ...(newType && { type: newType }) });
 
-	/** @param {ToastType} newToast */
-	const changeToast = (newToast) => {
-		removeToast();
-		setTimeout(() => (toast = newToast), 120);
-	};
-
 	/** @param {CustomEvent<FileList>} event */
 	const updateFiles = (event) => (files = event.detail);
 
@@ -170,7 +164,7 @@
 		processZipFile(file)
 			.then((urls) => processMessages(urls))
 			.catch((e) => {
-				changeToast({
+				toast = ({
 					type: 'error',
 					text: verifyFileErr
 				});
@@ -310,7 +304,7 @@
 				`%c Server message:\n${data.data}`,
 				'background-color: #233142; color: #fdffcd; display: grid; place-items: center;'
 			);
-			changeToast({ ...toast, text: data.data });
+			toast = ({ ...toast, text: data.data });
 		});
 	}
 
@@ -324,19 +318,19 @@
 		const files = /** @type {FileList} */ (fileInput.files);
 
 		if (!files?.length) {
-			changeToast({ type: 'error', text: 'Por favor selecione um arquivo zip antes.' });
+			toast = ({ type: 'error', text: 'Por favor selecione um arquivo zip antes.' });
 			return;
 		}
 
 		const file = files[0];
 		if (!file.name.endsWith('.zip')) {
-			changeToast({ type: 'error', text: 'Please select a ZIP file.' });
+			toast = ({ type: 'error', text: 'Please select a ZIP file.' });
 			return;
 		}
 
 		messages = null;
 		result = null;
-		changeToast({
+		toast = ({
 			text: 'Iniciando Transcrição',
 			type: 'transcribe'
 		});
@@ -351,7 +345,7 @@
 			body: formData
 		}).catch((e) => {
 			console.error(e);
-			changeToast({
+			toast = ({
 				type: 'error',
 				text: 'Erro ao Enviar o Arquivo, Verifique Sua Conexão.'
 			});
@@ -359,17 +353,17 @@
 		if (!response) return;
 
 		if (!response.ok) {
-			changeToast({ type: 'error', text: verifyFileErr });
+			toast = ({ type: 'error', text: verifyFileErr });
 			console.error(`HTTP error! status: ${response.status}`);
 		}
 
 		result = await response.json();
 		if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
-			changeToast({ type: 'error', text: t[0].ERRO });
+			toast = ({ type: 'error', text: t[0].ERRO });
 			return;
 		} // else
 		if (!Array.isArray(result) && result.Erro) {
-			changeToast({ type: 'error', text: t.Erro });
+			toast = ({ type: 'error', text: t.Erro });
 			return;
 		}
 		messages = result;
@@ -407,10 +401,10 @@
 	async function generatePDF() {
 		if (!chatContainer) {
 			console.error('Chat container not found');
-			changeToast({ type: 'error', text: 'Não há chat para imprimir' });
+			toast = ({ type: 'error', text: 'Não há chat para imprimir' });
 			return;
 		}
-		changeToast({
+		toast = ({
 			text: 'Iniciando Impressão',
 			type: 'print'
 		});
@@ -429,7 +423,7 @@
 			});
 
 			if (!response.ok) {
-				changeToast({ type: 'error', text: 'Erro ao gerar o PDF' });
+				toast = ({ type: 'error', text: 'Erro ao gerar o PDF' });
 				console.error(error, await response.text());
 				return;
 			}
@@ -448,7 +442,7 @@
 
 			removeToast();
 		} catch (e) {
-			changeToast({ type: 'error', text: 'Erro ao conectar ao servidor' });
+			toast = ({ type: 'error', text: 'Erro ao conectar ao servidor' });
 			console.error(error, e);
 		}
 	}
