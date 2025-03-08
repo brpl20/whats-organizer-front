@@ -542,7 +542,7 @@
 					<div class="message-bubble">
 						<div class="message-header">
 							<span class="message-name">{message.Name}</span>
-							<span class="message-time">{message.Time}</span>
+							<span class="message-time">{message.Date} {message.Time}</span>
 						</div>
 						{#if message.FileAttached}
 							{#if attachedPdfMsg}
