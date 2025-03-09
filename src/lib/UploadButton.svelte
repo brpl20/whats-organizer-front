@@ -16,25 +16,29 @@
 	const dispatch = createEventDispatcher();
 	$: dispatch('update', files);
 
-	function handleDrop(event) {
+	const handleDrop = (event) => {
 		event.preventDefault();
 		const droppedFiles = event.dataTransfer?.files;
 		if (droppedFiles?.length > 0) {
+			const dataTransfer = new DataTransfer();
+			Array.from(droppedFiles).forEach(file => dataTransfer.items.add(file));
+			fileInput.files = dataTransfer.files;
+
 			files = Array.from(droppedFiles);
 		}
 		isDragging = false;
 	}
 
-	function handleDragOver(event) {
+	const handleDragOver = (event) => {
 		event.preventDefault();
 		isDragging = true;
 	}
 
-	function handleDragLeave() {
+	const handleDragLeave = () => {
 		isDragging = false;
 	}
 
-	function triggerFileInput() {
+	const triggerFileInput = () => {
 		fileInput?.click();
 	}
 </script>
