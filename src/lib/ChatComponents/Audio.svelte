@@ -50,6 +50,10 @@
 	}
 
 	.audio-message audio {
+		width: 100%;
+	}
+
+	.audio-message.chrome audio {
 		width: 300px;
 		border-radius: 20px;
 		display: flex;

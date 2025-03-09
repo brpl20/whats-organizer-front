@@ -926,6 +926,9 @@
 
 	.message-text {
 		margin: 0;
+		hyphens: auto;
+		-moz-hyphens: auto;
+		word-wrap: break-word;
 	}
 
 	.filename {
