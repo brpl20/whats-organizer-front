@@ -529,7 +529,7 @@
 		on:change={handleBackendFileInjection}
 	/>
 
-	{#if messages?.length > 0}
+	{#if messages?.length}
 		<div class="chat-container" data-testid="playwright-chat" bind:this={chatContainer}>
 			{#each messages as message}
 				{@const attachedPdfMsg = message.FileAttached && message.links}
@@ -611,7 +611,7 @@
 		<button class="secondary" on:click={toggleLGPDModal}>LGPD</button>
 	</div>
 
-	{#if toast.type === 'print'}
+	{#if messages?.length}
 		<button class="floating-button loading-button" on:click={generatePDF} disabled={loading}>
 			{#if printLoading}
 				<div class="spinner-container sm-spinner-container">
