@@ -21,26 +21,33 @@
 		const droppedFiles = event.dataTransfer?.files;
 		if (droppedFiles?.length > 0) {
 			const dataTransfer = new DataTransfer();
-			Array.from(droppedFiles).forEach(file => dataTransfer.items.add(file));
+			Array.from(droppedFiles).forEach((file) => dataTransfer.items.add(file));
 			fileInput.files = dataTransfer.files;
 
 			files = Array.from(droppedFiles);
 		}
 		isDragging = false;
-	}
+	};
 
 	const handleDragOver = (event) => {
 		event.preventDefault();
 		isDragging = true;
-	}
+	};
 
 	const handleDragLeave = () => {
 		isDragging = false;
-	}
+	};
 
 	const triggerFileInput = () => {
 		fileInput?.click();
-	}
+	};
+
+	const handleFileChange = (event) => {
+		const selectedFiles = event.target.files;
+		if (selectedFiles?.length > 0) {
+			files = Array.from(selectedFiles);
+		}
+	};
 </script>
 
 <div class="upload-container">
@@ -94,7 +101,13 @@
 			type="file"
 			bind:this={fileInput}
 			accept=".zip"
-			on:change={(e) => (files = fileInput?.files || files)}
+			on:change={(e) => {
+				if (fileInput?.files) {
+					const dataTransfer = new DataTransfer();
+					Array.from(fileInput.files).forEach((file) => dataTransfer.items.add(file));
+					files = Array.from(dataTransfer.files);
+				}
+			}}
 		/>
 	</div>
 </div>
@@ -111,9 +124,9 @@
 
 	.drop-area {
 		position: relative;
-        display: flex;
-        align-items: center;
-        flex-direction: column;
+		display: flex;
+		align-items: center;
+		flex-direction: column;
 		border-radius: 10px;
 		padding: 30px;
 		text-align: center;
@@ -180,9 +193,9 @@
 		width: 100%;
 	}
 
-    .file-list h4 {
-        padding-left: 9px;
-    }
+	.file-list h4 {
+		padding-left: 9px;
+	}
 
 	.file-list ul {
 		list-style: none;
@@ -228,8 +241,8 @@
 		position: relative;
 		width: 96px;
 		height: 96px;
-        margin-top: -5px;
-        margin-bottom: 5px;
+		margin-top: -5px;
+		margin-bottom: 5px;
 	}
 
 	.spinner-container,
