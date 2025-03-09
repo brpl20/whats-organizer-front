@@ -6,9 +6,16 @@
 	export let fileUrl;
 	/** @type {string} */
 	export let audioTranscription;
+
+	/** @type {string} */
+	let browser = '';
+
+	/** svelte 5 derived rune */
+	$: if (window?.chrome) browser = 'chrome'; 
+
 </script>
 
-<div class="audio-message">
+<div class={`audio-message ${browser}`}>
 	<div class="audio-filename">{filename}</div>
 	<div class="wrap">
 		<audio
@@ -111,7 +118,7 @@
 		position: relative;
 	}
 
-	.audio-message .wrap::before {
+	.audio-message.chrome .wrap::before {
 		content: '';
 		background: #e0f5e9;
 		width: 10px;
