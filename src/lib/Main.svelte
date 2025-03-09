@@ -995,7 +995,7 @@
 		z-index: 1;
 		position: fixed;
 		bottom: 20px;
-		right: 20px;
+		left: 40vw;
 		background-color: #1c1c1c;
 		color: white;
 		border: none;
@@ -1004,5 +1004,13 @@
 		cursor: pointer;
 		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 		font-size: 17px;
+	}
+
+	@media (min-width:320px)  {
+		.floating-button {
+			top: 90vh;
+			bottom: unset;
+			margin: -20px 28px;
+		}
 	}
 </style>
