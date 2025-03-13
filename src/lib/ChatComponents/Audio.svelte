@@ -37,6 +37,11 @@
 </div>
 
 <style>
+	.audio-message {
+		display: grid;
+		width: 100%;
+	}
+
     .audio-filename {
 		font-size: 0.8em;
 		color: #666;
@@ -57,7 +62,6 @@
 		width: 300px;
 		border-radius: 20px;
 		display: flex;
-		margin: 10px auto;
 		background-color: #e0f5e9;
 		border-radius: 25px;
 		padding: 5px 10px;
@@ -116,10 +120,15 @@
 	Esconde a "/" no player de audio, delimitando tempo atual/ tempo total,
 	agradeço https://stackoverflow.com/users/2817442/iorgu pela resposta
 	no stackoverflow sobre como esconder essa "/"
+	Aplica somente no Chrome (Chromium, Brave e Edge acho?)
 	*/
 
 	.audio-message .wrap {
 		position: relative;
+		width: fit-content;
+		height: fit-content;
+		display: block;
+		margin: 10px auto;
 	}
 
 	.audio-message.chrome .wrap::before {
