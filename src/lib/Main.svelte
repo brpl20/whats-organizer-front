@@ -35,6 +35,7 @@
 	 * @property {string} Message
 	 * @property {string} Name
 	 * @property {string} Time
+	 * @property {boolean} IsApple
 	 * @property {string=} ERRO
 	 */
 	/**
@@ -63,6 +64,8 @@
 	let messages = [];
 	/** @type {FileList=} */
 	let files = null;
+	// maioria é android
+	let isApple = false;
 
 	/**
 	 * @typedef {Pick<ToastProps, 'text' | 'onClose'> & {type: Exclude<ToastTypes, 'all'>}} ToastType
@@ -367,6 +370,9 @@
 			return;
 		}
 		messages = result;
+		isApple = messages?.[0]?.IsApple;
+		console.log('isapple '+ isApple)
+		console.log(messages)
 		processConversation(file);
 	}
 
@@ -504,6 +510,14 @@
 		extractMessagesJson(injectedFile).then((m) => (messages = m));
 		processConversation(injectedFile);
 	};
+
+	/**
+	 * Pega o lado do chat baseado em dispositivo (Apple/ Android)
+	 * @param {boolean} isApple
+	 */
+	const getSideByDevice = (isApple) => (
+		isApple ? ['left', 'right'] : ['right', 'left']
+		)
 </script>
 
 <Toast {...toastProps} />
@@ -535,7 +549,7 @@
 				{@const attachedPdfMsg = message.FileAttached && message.links}
 				{@const isLongMessage = message?.links?.length > 4 || message?.Message?.length > 900}
 				<div
-					class="message-wrapper {message.ID === 1 ? 'left' : 'right'} {!isLongMessage
+					class="message-wrapper {getSideByDevice(isApple)[(message?.ID || 1) - 1]} {!isLongMessage
 						? 'avoid-pdf-break'
 						: ''}"
 				>
