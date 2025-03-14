@@ -442,7 +442,7 @@
 
 			removeToast();
 		} catch (e) {
-			toast = ({ type: 'error', text: 'Erro ao conectar ao servidor' });
+			toast = ({ type: 'error', text: 'Erro ao Processar Requisição' });
 			console.error(error, e);
 		}
 	}
