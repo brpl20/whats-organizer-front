@@ -11,7 +11,7 @@ export async function GET() {
 >
     <url>
         <loc>https://www.whatsorganizer.com</loc>
-        <lastmod>2024-12-10T09:52:53+00:00</lastmod>
+        <lastmod>2025-1-1T21:42:13+00:00</lastmod>
         <priority>1</priority>
     </url>
 </urlset>
