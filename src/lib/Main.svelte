@@ -21,6 +21,8 @@
 	/** Timeout caso o socketio não consiga conectar */
 	const socketConnTimeout = 5000;
 
+	const uuid = crypto.randomUUID();
+
 	/** @type {HTMLDivElement=}*/
 	let chatContainer = null;
 
@@ -286,7 +288,8 @@
 		socket ??= io(PUBLIC_API_URL, {
 			reconnectionAttempts: 5,
 			transports: ['websocket', 'polling', 'webtransport'],
-			timeout: socketConnTimeout
+			timeout: socketConnTimeout,
+			query: `uid=${uuid}`
 		});
 
 		/** @type {Promise<void>} */
@@ -334,7 +337,7 @@
 		messages = null;
 		result = null;
 		toast = ({
-			text: 'Iniciando Transcrição',
+			text: 'Iniciando Processamento',
 			type: 'transcribe'
 		});
 
@@ -343,7 +346,7 @@
 		const formData = new FormData();
 		formData.append('file', file);
 
-		const response = await fetch(`${PUBLIC_API_URL}/process`, {
+		const response = await fetch(`${PUBLIC_API_URL}/process?uid=${uuid}`, {
 			method: 'POST',
 			body: formData
 		}).catch((e) => {
