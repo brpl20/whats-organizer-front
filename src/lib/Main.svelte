@@ -330,7 +330,7 @@
 
 		const file = files[0];
 		if (!file.name.endsWith('.zip')) {
-			toast = ({ type: 'error', text: 'Please select a ZIP file.' });
+			toast = ({ type: 'error', text: 'Por favor confira a extensão do arquivo (.zip)' });
 			return;
 		}
 

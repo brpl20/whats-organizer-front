@@ -111,13 +111,13 @@
 
   async function handleSubmit() {
     if (!fileInput.files[0]) {
-      error = "Por favor selecione um arquivo zip antes.";
+      error = "Por favor selecione um arquivo zip antes (confira se possui a extensão correta).";
       return;
     }
 
     const file = fileInput.files[0];
     if (!file.name.endsWith('.zip')) {
-      error = "Please select a ZIP file.";
+      error = "Por favor selecione um arquivo.";
       return;
     }
 
