@@ -359,17 +359,44 @@
 		if (!response) return;
 
 		if (!response.ok) {
-			toast = ({ type: 'error', text: verifyFileErr });
+			// Try to get error message from response
+			try {
+				const errorData = await response.json();
+				if (errorData.Erro) {
+					// Check if it's a security error
+					if (errorData.Erro.includes('MALICIOSO') || errorData.Erro.includes('malicious') || errorData.Erro.includes('perigosos')) {
+						toast = ({
+							type: 'error',
+							text: `⚠️ ARQUIVO PERIGOSO DETECTADO!\n\n${errorData.Erro}\n\nPor favor, verifique o conteúdo do arquivo ZIP e remova quaisquer arquivos suspeitos antes de tentar novamente.`
+						});
+					} else {
+						toast = ({ type: 'error', text: errorData.Erro });
+					}
+				} else {
+					toast = ({ type: 'error', text: verifyFileErr });
+				}
+			} catch (e) {
+				toast = ({ type: 'error', text: verifyFileErr });
+			}
 			console.error(`HTTP error! status: ${response.status}`);
+			return;
 		}
 
 		result = await response.json();
 		if (Array.isArray(result) && result.length > 0 && result[0].ERRO) {
-			toast = ({ type: 'error', text: t[0].ERRO });
+			toast = ({ type: 'error', text: result[0].ERRO });
 			return;
 		} // else
 		if (!Array.isArray(result) && result.Erro) {
-			toast = ({ type: 'error', text: t.Erro });
+			// Check if it's a security error
+			if (result.Erro.includes('MALICIOSO') || result.Erro.includes('malicious') || result.Erro.includes('perigosos')) {
+				toast = ({
+					type: 'error',
+					text: `⚠️ ARQUIVO PERIGOSO DETECTADO!\n\n${result.Erro}\n\nPor favor, verifique o conteúdo do arquivo ZIP e remova quaisquer arquivos suspeitos antes de tentar novamente.`
+				});
+			} else {
+				toast = ({ type: 'error', text: result.Erro });
+			}
 			return;
 		}
 		messages = result;
@@ -564,8 +591,10 @@
 						{#if message.FileAttached}
 							{#if attachedPdfMsg}
 								<div class="filename">{getFileName(message.FileAttached)}</div>
+								
+								<!-- Show PDF page thumbnails -->
 								{#each message.links as link, index}
-									{#if !(index % 2)}
+									{#if !(index % 2) && message.links[index + 1] !== 'pdf'}
 										<img
 											src={link}
 											alt="Página do Documento Anexado"
@@ -575,10 +604,12 @@
 										/>
 									{/if}
 								{/each}
-								<span class="small-description"
-									>Imagens apenas ilustrativas, confira os arquivos originais, demonstrando no 6
-									miniaturas máximo.</span
-								>
+								<span class="small-description">
+									Imagens apenas ilustrativas, confira os arquivos originais. Demonstrando no máximo 6 miniaturas. 
+									{#if message.links && message.links.length >= 2 && message.links[1] === 'pdf'}
+										Use <b><a href={message.links[0]} target="_blank" rel="noopener noreferrer" class="pdf-inline-link">este link</a></b> para baixar o PDF completo.
+									{/if}
+								</span>
 							{/if}
 							{#if isAudioFile(message.FileAttached)}
 								<Audio
@@ -1005,6 +1036,21 @@
 		border-left: 3px solid #ccc;
 		margin: 10px 0;
 		display: inline-block;
+	}
+
+	.pdf-inline-link {
+		color: #007bff;
+		text-decoration: underline;
+		transition: color 0.3s ease;
+	}
+
+	.pdf-inline-link:hover {
+		color: #0056b3;
+		text-decoration: underline;
+	}
+
+	.pdf-inline-link:visited {
+		color: #007bff;
 	}
 
 	.loading-button {
