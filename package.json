@@ -36,13 +36,16 @@
 	"type": "module",
 	"dependencies": {
 		"@fontsource/alfa-slab-one": "^5.0.20",
+		"@tailwindcss/vite": "^4.1.12",
 		"amplify-adapter": "^0.1.2",
 		"jszip": "^3.10.1",
 		"lamejs": "^1.2.1",
+		"lucide-svelte": "^0.540.0",
 		"mammoth": "^1.8.0",
 		"pdfjs-dist": "^4.6.82",
 		"react-pdf": "^9.1.0",
 		"socket.io-client": "^4.8.0",
-		"svelte-youtube-lite": "^0.5.1"
+		"svelte-youtube-lite": "^0.5.1",
+		"tailwindcss": "^4.1.12"
 	}
 }

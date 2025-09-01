@@ -6,40 +6,22 @@
 	 * @typedef {import('./types/toast.type.js').ToastProps} ToastProps
 	 */
 
-	/**
-	 * @type {ToastProps['svg']}
-	 */
+	/** @type {ToastProps['svg']} */
 	export let svg = null;
 
-	/**
-	 * @type {ToastProps['text']}
-	 */
+	/** @type {ToastProps['text']} */
 	export let text = '';
 
-	/**
-	 * @type {ToastProps['onClose']}
-	 */
+	/** @type {ToastProps['onClose']} */
 	export let onClose = () => undefined;
 
-		/**
-	 * @type {ToastProps['closed']}
-	 */
+	/** @type {ToastProps['closed']} */
 	export let closed = false;
 
-	/**
-	 * @type {ToastProps['error']}
-	 */
+	/** @type {ToastProps['error']} */
 	export let error = false;
 
-	/**
-	 * Se dispensado no CSS (Geralmente dispensado uns millisegundos
-	 * antes de removed, para mostrar a animação de fade sumindo
-	 */
 	let internallyDismissed = false;
-
-	/**
-	 * Elemento removido do HTML (Após a animação CSS)
-	 */
 	let removed = false;
 
 	$: if (removed) onClose?.();
@@ -52,28 +34,18 @@
 		timeout = setTimeout(() => (removed = true), 300);
 	};
 
-	/** insere no DOM com opacity 0 e inicia transition opacity 100% */
 	const requestAnimatedPopup = () => {
 		if (!text) return;
-
 		removed = false;
 		internallyDismissed = true;
-
 		clearInternalTimeout();
 		timeout = setTimeout(() => (internallyDismissed = false), 300);
 	}; 
 
 	let prevText = '';
-
-	/*
-	 * Inicia a animação de entrada da toast caso o texto tenha mudado
-	 * mas a toast tenha sido dispensada internamente com o botão de
-	 * fechar, dessa forma, a toast nova com texto novo deve aparecer
-	 */
 	const showNewToast = () => {
 		const previouslyInternallyDismissed = removed && !closed;
 		if (!previouslyInternallyDismissed) return;
-
 		requestAnimatedPopup();
 	}
 
@@ -82,13 +54,12 @@
 		showNewToast();
 	}
 
-	/** Inicia/ finaliza a animação caso requisitado pelo componente pai */
 	$: if (closed) requestAnimatedDismiss();
 	$: if (!closed) requestAnimatedPopup();
 
 	onDestroy(clearInternalTimeout);
 
-	/** @type {NodeJS.Timeout}*/
+	/** @type {NodeJS.Timeout} */
 	let timeout = null;
 
 	const onDismiss = () => {
@@ -97,116 +68,76 @@
 </script>
 
 {#if !removed}
-	<div class="toast-container">
+	<div class="fixed z-50 left-1/2 -translate-x-1/2 mt-4">
 		<div
-			class="toast
-					{closed || internallyDismissed ? '' : 'visible'}
-					{error ? 'error' : ''}
-			"
 			role="alert"
+			class="
+				flex items-center w-72 min-h-[4rem] px-4 py-2 rounded-2xl shadow-lg border
+				transition-opacity duration-300 ease-in-out
+				{closed || internallyDismissed ? 'opacity-0' : 'opacity-100'}
+				{error 
+					? 'from-red-50 to-red-100 border-red-300 text-red-800' 
+					: 'from-green-50 to-green-100 border-green-300 text-green-800'}
+			"
 		>
-			<div class="icon-container">
-				<svelte:component this={svg} />
+			<div
+				class="
+					inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg
+					{error 
+						? 'bg-red-200 text-red-700' 
+						: 'bg-green-200 text-green-700'}
+				"
+			>
+				<svelte:component this={svg} class="w-4 h-4" />
 				<span class="sr-only">{error ? 'Erro' : 'Notificação'}</span>
 			</div>
-			<div class="toast-text">{error ? (text || "Erro Desconhecido!") : (text || "")}</div>
-			<button type="button" class="close-button" on:click={onDismiss} aria-label="Close">
+
+			<div class="ml-4 text-sm font-medium flex-1">
+				{error ? (text || "Erro Desconhecido!") : (text || "")}
+			</div>
+
+			<button 
+				type="button" 
+				class="ml-auto -mr-1.5 rounded-lg p-1.5 bg-white/60 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200"
+				on:click={onDismiss}
+				aria-label="Close"
+			>
 				<span class="sr-only">Close</span>
-				<CloseSvg />
+				<CloseSvg class="w-4 h-4" />
 			</button>
 		</div>
 	</div>
 {/if}
 
 <style>
-	.toast-container {
-		position: fixed;
-		z-index: 10;
-		left: 50%;
-		transform: translate(-50%, 0);
-		width: auto;
-		height: auto;
-		backface-visibility: hidden;
-		margin-top: 1rem;
-	}
+	/* Estilos base do TailwindCSS já estão aplicados nas classes do HTML. */
+	/* Adicione aqui quaisquer estilos customizados que o Tailwind não cubra diretamente. */
 
-	.toast {
-		display: flex;
-		align-items: center;
-		width: 18rem;
-		height: 4rem;
-		padding: 1rem;
-		background-color: #e0f2fe;
-		color: #374151;
-		border-radius: 0.5rem;
-		box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-		border: 1px solid #94a3b8;
-		opacity: 0;
-		transition: opacity 300ms;
-	}
+	/* Exemplo: Se precisar de um gradiente mais específico ou transição customizada */
+	.from-green-50 { background-image: linear-gradient(to right, var(--tw-gradient-stops, #ecfeff, #a7f3d0)); }
+	.to-green-100 { background-image: linear-gradient(to right, var(--tw-gradient-stops, #ecfeff, #a7f3d0)); }
+	.from-red-50 { background-image: linear-gradient(to right, var(--tw-gradient-stops, #fff1f2, #fed7d7)); }
+	.to-red-100 { background-image: linear-gradient(to right, var(--tw-gradient-stops, #fff1f2, #fed7d7)); }
 
-	.toast.error {
-		color: #5f0616;
-		border: 1px solid #f897a9;
-		background-color: #ffe9e4;
-	}
+	.border-green-300 { border-color: #6ee7b7; }
+	.border-red-300 { border-color: #f97316; }
+	.text-green-800 { color: #145a32; }
+	.text-red-800 { color: #742a2a; }
 
-	.toast.visible {
-		opacity: 1;
-	}
+	.bg-green-200 { background-color: #86efac; }
+	.text-green-700 { color: #166534; }
+	.bg-red-200 { background-color: #fca5a3; }
+	.text-red-700 { color: #991b1b; }
 
-	.icon-container {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		width: 2rem;
-		height: 2rem;
-		background-color: #bfdbfe;
-		color: #3b82f6;
-		border-radius: 0.5rem;
-	}
+	.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
 
-	.error .icon-container {
-		background-color: #ffcdc1;
-		color: #3b82f6;
-	}
+	/* Customização para os botões */
+	.hover\:bg-gray-50:hover { background-color: #f9fafb; }
+	.hover\:text-gray-700:hover { color: #374151; }
 
-	.toast-text {
-		margin-left: 1.5rem;
-		font-size: 0.875rem;
-		font-weight: 400;
-	}
-
-	.close-button {
-		margin-left: auto;
-		margin-right: -0.375rem;
-		margin-top: -0.375rem;
-		background-color: #ffffff;
-		color: #9ca3af;
-		border: 1px solid #d1d5db;
-		border-radius: 0.5rem;
-		padding: 0.375rem;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		height: 2rem;
-		width: 2rem;
-		cursor: pointer;
-		transition-property: color background-color;
-		transition-duration: 0.2s;
-		transition-timing-function: linear;
-	}
-
-	.close-button:hover {
-		background-color: #f3f4f6;
-		color: #111827;
-	}
-
-	.error .close-button:hover {
-		background-color: #fffaf9;
-	}
-
+	/* Classe para o ícone do close SVG, caso você não esteja passando a classe diretamente */
+	.w-4 { width: 1rem; }
+	.h-4 { height: 1rem; }
 	.sr-only {
 		position: absolute;
 		width: 1px;

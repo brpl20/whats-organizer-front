@@ -1,6 +1,6 @@
 <script>
 	import { fade } from 'svelte/transition';
-	import { PUBLIC_API_URL } from '$env/static/public';
+	import { PUBLIC_API_URL, PUBLIC_NODE_ENV } from '$env/static/public';
 	import UploadButton from './UploadButton.svelte';
 	import { onDestroy } from 'svelte';
 	import Video from './ChatComponents/Video.svelte';
@@ -9,6 +9,8 @@
 	import TranscribeSvg from './TranscribeSvg.svelte';
 	import PrintSvg from './PrinterSvg.svelte';
 	import ErrorSvg from './ErrorSvg.svelte';
+	import { MessageCircle, Upload, Zap, Shield, Info, Smartphone, Apple, FileText } from "lucide-svelte";
+
 	/**
 	 * @typedef {import('./types/toast.type.js').ToastTypes} ToastTypes
 	 * @typedef {import('./types/toast.type.js').ToastProps} ToastProps
@@ -17,6 +19,8 @@
 	 * @typedef {import('socket.io-client').default=} SocketIo
 	 * @typedef {import('socket.io-client').Socket<DefaultEventsMap, DefaultEventsMap>=} SocketType
 	 */
+
+	 const prod = (PUBLIC_NODE_ENV || '').toLowerCase() in ['prod', 'production'];
 
 	/** Timeout caso o socketio não consiga conectar */
 	const socketConnTimeout = 5000;
@@ -121,7 +125,7 @@
 	/** @type {SocketType} */
 	let socket = null;
 
-	onDestroy(() => socket?.disconnect?.());
+	onDestroy(() => prod ? socket?.disconnect?.() : () => undefined);
 
 	const toggleLimitacoesModal = () => (showLimitacoesModal = !showLimitacoesModal);
 
@@ -278,6 +282,7 @@
 		});
 
 	async function connectSocket() {
+		if (!prod) return;
 		/**
 		 * Socket.active, if socket still retrying to connect
 		 * Socket.connected if the socket is currently connected
@@ -551,532 +556,348 @@
 </script>
 
 <Toast {...toastProps} />
-<main>
-	<h1>WhatsOrganizer</h1>
+<main class="min-h-screen bg-gradient-to-br from-emerald-400 via-teal-500 to-blue-600 relative overflow-hidden">
+	<!-- Fundo decorativo -->
+	<div class="absolute inset-0 bg-black/5"></div>
+	<div class="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
+	<div class="absolute bottom-20 right-10 w-96 h-96 bg-emerald-300/20 rounded-full blur-3xl"></div>
 
-	<p class="subtitle">
-		Organize suas conversas de WhatsApp<br />
-		e transcreva áudios de forma rápida e<br />
-		segura de uma única vez
-	</p>
-	<form class="file-zip" on:submit={handleSubmit}>
-		<UploadButton on:update={updateFiles} {loading} />
-		<button type="submit" disabled={loading}>
-			{loading ? 'Processando...' : 'Enviar'}
-		</button>
-	</form>
+	<div class="relative z-10 container mx-auto px-4 py-12">
+		<!-- Header -->
+		<div class="text-center mb-16 animate-fade-in">
+			<div class="text-center mb-16 animate-fade-in">
+          <div class="flex justify-center items-center mb-6">
+            <div class="bg-white/20 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-white/30">
+              <MessageCircle class="w-12 h-12 text-white" />
+            </div>
+          </div>
+			<h1 class="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight">WhatsOrganizer</h1>
+			<p class="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed font-light">
+				Organize suas conversas de WhatsApp e transcreva áudios de forma rápida e segura
+			</p>
+		</div>
 
-	<input
-		data-testid="playwright-inject-media"
-		type="file"
-		accept=".zip"
-		on:change={handleBackendFileInjection}
-	/>
+		<!-- Upload Card -->
+		<div class="max-w-2xl mx-auto mb-12">
+			<!-- <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 p-8 md:p-12"> -->
+			<div class="">
+				<form class="file-zip space-y-6" on:submit={handleSubmit}>
+					<UploadButton on:update={updateFiles} {loading} />
 
-	{#if messages?.length}
-		<div class="chat-container" data-testid="playwright-chat" bind:this={chatContainer}>
-			{#each messages as message}
-				{@const attachedPdfMsg = message.FileAttached && message.links}
-				{@const isLongMessage = message?.links?.length > 4 || message?.Message?.length > 900}
-				<div
-					class="message-wrapper {getSideByDevice(isApple)[(message?.ID || 1) - 1]} {!isLongMessage
-						? 'avoid-pdf-break'
-						: ''}"
-				>
-					<div class="message-bubble">
-						<div class="message-header">
-							<span class="message-name">{message.Name}</span>
-							<span class="message-time">{message.Date} {message.Time}</span>
+					<!-- <button
+						type="submit"
+						class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-lg"
+						disabled={loading}
+					>
+						{loading ? 'Processando...' : 'Enviar'}
+					</button> -->
+				</form>
+			</div>
+		</div>
+
+		<!-- Chat renderizado - DESIGN MODERNIZADO -->
+		{#if messages?.length}
+			<div
+				class="chat-container relative bg-gradient-to-b from-slate-50/95 to-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/60 mb-12 max-h-[75vh] overflow-hidden"
+				data-testid="playwright-chat"
+				bind:this={chatContainer}
+			>
+				<!-- Header do Chat -->
+				<div class="sticky top-0 z-10 bg-gradient-to-r from-emerald-500/90 to-teal-500/90 backdrop-blur-xl p-6 border-b border-white/20">
+					<div class="flex items-center justify-between">
+						<div class="flex items-center space-x-3">
+							<div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+								<MessageCircle class="w-6 h-6 text-white" />
+							</div>
+							<div>
+								<h3 class="text-lg font-semibold text-white">Conversa Organizada</h3>
+								<p class="text-sm text-white/80">{messages.length} mensagens processadas</p>
+							</div>
 						</div>
-						{#if message.FileAttached}
-							{#if attachedPdfMsg}
-								<div class="filename">{getFileName(message.FileAttached)}</div>
-								
-								<!-- Show PDF page thumbnails -->
-								{#each message.links as link, index}
-									{#if !(index % 2) && message.links[index + 1] !== 'pdf'}
-										<img
-											src={link}
-											alt="Página do Documento Anexado"
-											class="thumbnail-pdf avoid-pdf-break {message.links[index + 1] === 'landscape'
-												? 'landscape'
-												: 'portrait'}"
-										/>
-									{/if}
-								{/each}
-								<span class="small-description">
-									Imagens apenas ilustrativas, confira os arquivos originais. Demonstrando no máximo 6 miniaturas. 
-									{#if message.links && message.links.length >= 2 && message.links[1] === 'pdf'}
-										Use <b><a href={message.links[0]} target="_blank" rel="noopener noreferrer" class="pdf-inline-link">este link</a></b> para baixar o PDF completo.
-									{/if}
-								</span>
-							{/if}
-							{#if isAudioFile(message.FileAttached)}
-								<Audio
-									filename={getFileName(message.FileAttached)}
-									fileUrl={message.FileURL}
-									audioTranscription={message.AudioTranscription}
-								/>
-							{:else if isImgFile(message.FileAttached)}
-								<div class="filename">{getFileName(message.FileAttached)}</div>
-								<img src={message.FileURL} alt="Mídia na Conversa" class="image-preview" />
-							{:else if isVideoFile(message.FileAttached)}
-								<Video fileURL={message.FileURL} />
-							{:else if isWordFile(message.FileAttached)}
-								<div class="filename">{getFileName(message.FileAttached)}</div>
-							{/if}
-							<!--
-							@TODO Verificar se foto com legenda funciona
-						    https://github.com/brpl20/whats-organizer-front/issues/5
-							Acho que a mídia faz com que não apareça legenda
-						 -->
-						{:else}
-							<p class="message-text">{message.Message}</p>
-						{/if}
+						<div class="flex items-center space-x-2">
+							<div class="px-3 py-1 bg-white/20 rounded-full">
+								<span class="text-xs font-medium text-white">{isApple ? 'iOS' : 'Android'}</span>
+							</div>
+						</div>
 					</div>
 				</div>
-			{/each}
+
+				<!-- Container das mensagens -->
+				<div class="p-6 space-y-4 overflow-y-auto max-h-[calc(75vh-100px)] scroll-smooth">
+					{#each messages as message, index}
+						{@const attachedPdfMsg = message.FileAttached && message.links}
+						{@const isLongMessage = message?.links?.length > 4 || message?.Message?.length > 900}
+						{@const isOutgoing = getSideByDevice(isApple)[(message?.ID || 1) - 1] === 'right'}
+
+						<div class="message-wrapper animate-slide-in" style="animation-delay: {index * 0.05}s">
+							<div class="flex {isOutgoing ? 'justify-end' : 'justify-start'} mb-3">
+								<div class="max-w-[75%] group">
+									<!-- Bubble da mensagem -->
+									<div class="relative {isOutgoing 
+										? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-[24px] rounded-br-[8px]' 
+										: 'bg-white text-gray-800 rounded-[24px] rounded-bl-[8px] border border-gray-100'} 
+										p-4 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+										
+										<!-- Header da mensagem -->
+										<div class="flex justify-between items-center mb-2">
+											<span class="text-sm font-semibold {isOutgoing ? 'text-emerald-100' : 'text-emerald-600'}">
+												{message.Name}
+											</span>
+											<span class="text-xs {isOutgoing ? 'text-emerald-200/80' : 'text-gray-400'} ml-3">
+												{message.Date} • {message.Time}
+											</span>
+										</div>
+
+										<!-- Conteúdo da mensagem -->
+										<div class="message-content">
+											{#if message.FileAttached}
+												<!-- Anexos PDF -->
+												{#if attachedPdfMsg}
+													<div class="mb-3">
+														<div class="flex items-center space-x-2 mb-3 p-2 {isOutgoing ? 'bg-white/10' : 'bg-gray-50'} rounded-lg">
+															<FileText class="w-4 h-4 {isOutgoing ? 'text-white' : 'text-gray-600'}" />
+															<span class="text-sm {isOutgoing ? 'text-white/90' : 'text-gray-600'} truncate">
+																{getFileName(message.FileAttached)}
+															</span>
+														</div>
+														<!-- Grid de imagens do PDF -->
+														<div class="grid grid-cols-2 gap-2 mb-3">
+															{#each message.links as link, linkIndex}
+																{#if !(linkIndex % 2) && message.links[linkIndex + 1] !== 'pdf'}
+																	<div class="relative overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
+																		<img
+																			src={link}
+																			alt="Página do Documento"
+																			class="w-full h-24 object-cover hover:scale-110 transition-transform duration-300 cursor-pointer"
+																		/>
+																		<div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+																	</div>
+																{/if}
+															{/each}
+														</div>
+														<!-- Link para PDF completo -->
+														{#if message.links && message.links.length >= 2 && message.links[1] === 'pdf'}
+															<a
+																href={message.links[0]}
+																target="_blank"
+																rel="noopener noreferrer"
+																class="inline-flex items-center space-x-1 text-sm {isOutgoing ? 'text-white hover:text-emerald-100' : 'text-emerald-600 hover:text-emerald-700'} underline underline-offset-2 hover:no-underline transition-colors"
+															>
+																<FileText class="w-3 h-3" />
+																<span>Baixar PDF completo</span>
+															</a>
+														{/if}
+													</div>
+												{/if}
+
+												<!-- Arquivos de áudio -->
+												{#if isAudioFile(message.FileAttached)}
+													<div class="mb-2">
+														<Audio
+															filename={getFileName(message.FileAttached)}
+															fileUrl={message.FileURL}
+															audioTranscription={message.AudioTranscription}
+														/>
+													</div>
+												<!-- Imagens -->
+												{:else if isImgFile(message.FileAttached)}
+													<div class="mb-2">
+														<div class="relative overflow-hidden rounded-lg shadow-lg max-w-xs">
+															<img
+																src={message.FileURL}
+																alt="Mídia compartilhada"
+																class="w-full h-auto object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
+															/>
+															<div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div>
+														</div>
+													</div>
+												<!-- Vídeos -->
+												{:else if isVideoFile(message.FileAttached)}
+													<div class="mb-2">
+														<div class="rounded-lg overflow-hidden shadow-lg max-w-xs">
+															<Video fileURL={message.FileURL} />
+														</div>
+													</div>
+												<!-- Arquivos Word -->
+												{:else if isWordFile(message.FileAttached)}
+													<div class="flex items-center space-x-2 p-2 {isOutgoing ? 'bg-white/10' : 'bg-gray-50'} rounded-lg">
+														<FileText class="w-4 h-4 {isOutgoing ? 'text-white' : 'text-gray-600'}" />
+														<span class="text-sm {isOutgoing ? 'text-white/90' : 'text-gray-600'}">
+															{getFileName(message.FileAttached)}
+														</span>
+													</div>
+												{/if}
+											{:else}
+												<!-- Mensagem de texto -->
+												<div class="text-sm leading-relaxed whitespace-pre-wrap break-words">
+													{message.Message}
+												</div>
+											{/if}
+										</div>
+
+										<!-- Indicador de lida (apenas para mensagens enviadas) -->
+										{#if isOutgoing}
+											<div class="flex justify-end mt-2">
+												<div class="flex space-x-1">
+													<div class="w-1 h-1 bg-emerald-200 rounded-full"></div>
+													<div class="w-1 h-1 bg-emerald-200 rounded-full"></div>
+												</div>
+											</div>
+										{/if}
+									</div>
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
+
+				<!-- Footer do chat -->
+				<div class="sticky bottom-0 bg-gradient-to-r from-gray-50/90 to-white/90 backdrop-blur-xl p-4 border-t border-gray-200/50">
+					<div class="flex justify-center">
+						<div class="flex items-center space-x-2 text-xs text-gray-500">
+							<div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+							<span>Conversa processada e organizada</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		{/if}
+
+		<!-- Instruções -->
+		<div class="max-w-3xl mx-auto mb-12">
+			<div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-8">
+				<h3 class="text-xl font-bold text-gray-800 mb-3">Como usar o WhatsOrganizer</h3>
+				<p class="text-gray-600 leading-relaxed">
+					Faça o upload do seu arquivo exportado do WhatsApp em formato <b>.zip</b>.
+				</p>
+				<div class="flex justify-center gap-6 mt-6">
+					<a
+						href="https://faq.whatsapp.com/1180414079177245/?cms_platform=iphone&helpref=platform_switcher"
+						class="bg-gray-200 p-4 rounded-full hover:bg-emerald-100 transition"
+					>
+						<img src="/apple.png" alt="Apple" class="w-8 h-8" />
+					</a>
+					<a
+						href="https://faq.whatsapp.com/1180414079177245/?helpref=uf_share"
+						class="bg-gray-200 p-4 rounded-full hover:bg-emerald-100 transition"
+					>
+						<img src="/android.png" alt="Android" class="w-8 h-8" />
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Botões extra -->
+		<div class="text-center space-x-4">
+			<button
+				class="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white font-semibold py-3 px-6 rounded-xl border border-white/30 transition-all duration-300 hover:scale-105"
+				on:click={toggleLimitacoesModal}
+			>
+				Limitações
+			</button>
+			<button
+				class="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white font-semibold py-3 px-6 rounded-xl border border-white/30 transition-all duration-300 hover:scale-105"
+				on:click={toggleLGPDModal}
+			>
+				LGPD
+			</button>
+		</div>
+
+		<!-- Floating PDF download -->
+		{#if messages?.length}
+			<button
+				class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold py-4 px-10 rounded-2xl shadow-lg hover:scale-105 transition transform"
+				on:click={generatePDF}
+				disabled={loading}
+			>
+				{#if printLoading}
+					<span class="animate-spin inline-block mr-2 w-5 h-5 border-2 border-white border-t-transparent rounded-full"></span>
+				{/if}
+				Download PDF
+			</button>
+		{/if}
+	</div>
+
+	<!-- Modais -->
+	{#if showLimitacoesModal}
+		<div class="fixed inset-0 bg-black/60 flex justify-center items-center z-50" on:click={toggleLimitacoesModal}>
+			<div class="bg-white rounded-xl p-8 max-w-md shadow-2xl" on:click|stopPropagation>
+				<h2 class="text-2xl font-bold mb-4">Limitações</h2>
+				<ul class="list-disc list-inside text-gray-700 space-y-2">
+					<li>Grupos não suportados</li>
+					<li>Tamanho máximo dos arquivos: 40 Mb</li>
+					<li>Não confere garantia de autenticidade</li>
+				</ul>
+			</div>
 		</div>
 	{/if}
 
-	<p class="instructions">
-		Faça o upload do seu arquivo exportado do WhatsApp<br />
-		ele estará no formato .zip, confira como fazer:
-	</p>
-	<div class="platform-icons">
-		<a
-			href="https://faq.whatsapp.com/1180414079177245/?cms_platform=iphone&helpref=platform_switcher"
-			class="platform-icon"
-		>
-			<img src="/apple.png" alt="Apple icon" class="icon-image icon-apple" />
-		</a>
-		<a href="https://faq.whatsapp.com/1180414079177245/?helpref=uf_share" class="platform-icon">
-			<img src="/android.png" alt="Android icon" class="icon-image icon-android" />
-		</a>
-	</div>
-	<div class="buttons">
-		<button class="secondary" on:click={toggleLimitacoesModal}>Limitações</button>
-		<button class="secondary" on:click={toggleLGPDModal}>LGPD</button>
-	</div>
-
-	{#if messages?.length}
-		<button class="floating-button loading-button" on:click={generatePDF} disabled={loading}>
-			{#if printLoading}
-				<div class="spinner-container sm-spinner-container">
-					<div class="spinner sm-spinner" />
-				</div>
-			{/if}
-			Download PDF
-		</button>
+	{#if showLGPDModal}
+		<div class="fixed inset-0 bg-black/60 flex justify-center items-center z-50" on:click={toggleLGPDModal}>
+			<div class="bg-white rounded-xl p-8 max-w-md shadow-2xl" on:click|stopPropagation>
+				<h2 class="text-2xl font-bold mb-4">LGPD</h2>
+				<p class="text-gray-700">
+					Não coletamos nenhum dado e todos os arquivos são destruídos após o uso.
+				</p>
+			</div>
+		</div>
 	{/if}
 </main>
 
-{#if showLimitacoesModal}
-	<div
-		class="modal-backdrop"
-		role="button"
-		tabindex="0"
-		aria-label="Fechar modal de limitações"
-		on:click={toggleLimitacoesModal}
-		on:keydown={(e) => toggleLimitacoesModal()}
-	>
-		<div class="modal" transition:fade>
-			<h2>Limitações</h2>
-			<ul>
-				<li>- Grupos não suportados</li>
-				<li>- Tamanho máximo dos arquivos: 40 Mb</li>
-				<li>- Não confere garantia de autenticidade</li>
-			</ul>
-		</div>
-	</div>
-{/if}
-
-{#if showLGPDModal}
-	<div
-		class="modal-backdrop"
-		role="button"
-		tabindex="0"
-		aria-label="Fechar modal de LGPD"
-		on:click={toggleLGPDModal}
-		on:keydown={(e) => toggleLGPDModal()}
-	>
-		<div class="modal" transition:fade>
-			<h2>LGPD</h2>
-			<p>
-				Não coletamos nenhum dado e todos os arquivos são totalmente destruídos após as etapas do
-				organizador serem concluídas.
-			</p>
-		</div>
-	</div>
-{/if}
-
 <style>
-	@media print {
-		@page {
-			size: A4;
-			margin: 1cm 0;
-			/* background-color: #e5ddd5; */
+	@keyframes fade-in {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
 		}
-
-		* {
-			-webkit-print-color-adjust: exact !important;
-			print-color-adjust: exact !important;
-			color-adjust: exact !important;
-		}
-
-		main > :not(.chat-container) {
-			display: none !important;
-		}
-
-		main {
-			margin: 0 auto !important;
-			padding: 0 !important;
-			background-color: unset !important;
-		}
-
-		.chat-container {
-			margin: 0 !important;
-		}
-
-		.avoid-pdf-break {
-			break-inside: avoid;
-		}
-
-		[data-testid='playwright-inject-media'] {
-			display: none !important;
-		}
-	}
-
-	[data-testid='playwright-inject-media'] {
-		display: none;
-	}
-
-	* {
-		font-family: Arial, sans-serif;
-		list-style-type: none;
-	}
-
-	.spinner-container,
-	.file-zip :global(.spinner-container) {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 10px;
-		text-align: center;
-	}
-	.spinner,
-	.file-zip :global(.spinner) {
-		width: 50px;
-		aspect-ratio: 1;
-		display: grid;
-		border: 4px solid #0000;
-		border-radius: 50%;
-		border-right-color: #005c4b;
-		animation: l15 1s infinite linear;
-	}
-	.spinner::before,
-	.spinner::after,
-	.file-zip :global(.spinner::after),
-	.file-zip :global(.spinner::before) {
-		content: '';
-		grid-area: 1/1;
-		margin: 2px;
-		border: inherit;
-		border-radius: 50%;
-		animation: l15 2s infinite;
-	}
-	.spinner::after,
-	.file-zip :global(.spinner::after) {
-		margin: 8px;
-		animation-duration: 3s;
-	}
-
-	.sm-spinner-container {
-		height: 10px;
-		width: 44px;
-		margin: 0 12px 0 0;
-	}
-
-	.sm-spinner::after {
-		margin: 0px;
-		animation-duration: 2s;
-	}
-	@keyframes l15 {
-		100% {
-			transform: rotate(1turn);
-		}
-	}
-
-	@keyframes spin {
 		to {
-			transform: rotate(360deg);
+			opacity: 1;
+			transform: translateY(0);
 		}
 	}
-	main {
-		max-width: 600px;
-		margin: 0 auto;
-		padding: 20px;
-		text-align: center;
-		background-color: #58f1c4;
-		color: #1c1c1c;
+	
+	@keyframes slide-in {
+		from {
+			opacity: 0;
+			transform: translateX(-20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+	
+	.animate-fade-in {
+		animation: fade-in 0.8s ease-out;
+	}
+	
+	.animate-slide-in {
+		animation: slide-in 0.6s ease-out;
+	}
+	
+	/* Scrollbar personalizado */
+	.chat-container ::-webkit-scrollbar {
+		width: 8px;
+	}
+	
+	.chat-container ::-webkit-scrollbar-track {
+		background: rgba(0, 0, 0, 0.05);
 		border-radius: 10px;
 	}
-
-	h1 {
-		font-size: 3em;
-		margin-bottom: 10px;
-		font-family: 'Alfa Slab One', system-ui;
-		font-weight: 700;
-		text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
-		color: #005c4b;
-	}
-
-	.subtitle,
-	.instructions {
-		margin-bottom: 20px;
-		color: #005c4b;
-	}
-
-	button {
-		padding: 18px 30px;
-		border: none;
-		border-radius: 5px;
-		background-color: #1c1c1c;
-		color: white;
-		cursor: pointer;
-		font-size: 15px;
-	}
-
-	.platform-icons {
-		display: flex;
-		justify-content: center;
-		gap: 1rem;
-		align-items: center;
-		margin: 15px;
-	}
-
-	.platform-icon {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		background-color: #f0f0f0;
-		transition: background-color 0.3s ease;
-	}
-
-	.platform-icon:hover {
-		background-color: #145c4b;
-	}
-
-	.icon-image {
-		width: 24px;
-		height: 24px;
-		object-fit: contain;
-	}
-
-	.buttons {
-		display: flex;
-		justify-content: center;
-		gap: 20px;
-		margin-bottom: 20px;
-	}
-
-	.modal-backdrop {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background-color: rgba(0, 0, 0, 0.5);
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		color: #1c1c1c;
-	}
-
-	.modal {
-		background-color: white;
-		padding: 20px;
-		border-radius: 5px;
-		max-width: 400px;
-		text-align: left;
-		border-top: 3px solid;
-		border-image: linear-gradient(to right, #00f38d, #00b4f3) 1;
-		font-size: 18px;
-	}
-
-	.modal h2 {
-		margin-top: 0;
-	}
-
-	.modal ul {
-		padding-left: 20px;
-		list-style-type: none;
-	}
-
-	.chat-container {
-		max-width: 100%;
-		margin: 20px 0;
-		padding: 20px 20px 25px 20px;
-		background-color: #e5ddd5;
+	
+	.chat-container ::-webkit-scrollbar-thumb {
+		background: linear-gradient(to bottom, #10b981, #14b8a6);
 		border-radius: 10px;
-		text-align: left;
 	}
-
-	.message-wrapper {
-		display: flex;
-		flex-direction: column;
-		padding: 12px 0 0 0;
+	
+	.chat-container ::-webkit-scrollbar-thumb:hover {
+		background: linear-gradient(to bottom, #059669, #0d9488);
 	}
-
-	.left {
-		align-items: flex-start;
-	}
-
-	.right {
-		align-items: flex-end;
-	}
-
-	.message-bubble {
-		max-width: 70%;
-		padding: 10px;
-		border-radius: 10px;
-		background-color: white;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-	}
-
-	.left .message-bubble {
-		background-color: #ffffff;
-	}
-
-	.right .message-bubble {
-		background-color: #dcf8c6;
-	}
-
-	.message-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		margin-bottom: 5px;
-		font-size: 0.8em;
-	}
-
-	.message-name {
-		font-weight: bold;
-	}
-
-	.message-time {
-		color: #999;
-		padding-left: 0.3em;
-	}
-
-	.message-text {
-		margin: 0;
-		hyphens: auto;
-		-moz-hyphens: auto;
-		word-wrap: break-word;
-	}
-
-	.filename {
-		font-size: 0.8em;
-		color: #666;
-		margin-bottom: 5px;
-	}
-
-	.image-preview {
-		width: 100px;
-		height: auto;
-		transition: transform 0.3s ease;
-	}
-
-	.image-preview:hover {
-		transform: scale(3.5);
-		z-index: 9;
-	}
-
-	.thumbnail-pdf {
-		width: 200px;
-		height: 200px;
-		object-fit: cover;
-		padding: 5px;
-	}
-
-	.thumbnail-pdf.landscape {
-		width: 300px;
-		height: 150px;
-		transition: transform 0.3s ease;
-	}
-
-	.thumbnail-pdf.portrait {
-		width: 150px;
-		height: 200px;
-		transition: transform 0.3s ease;
-	}
-
-	.thumbnail-pdf.landscape:hover {
-		transform: scale(3.5);
-		z-index: 9;
-	}
-
-	.thumbnail-pdf.portrait:hover {
-		transform: scale(3.5);
-		z-index: 9;
-	}
-
-	.small-description {
-		font-size: 12px;
-		color: #666;
-		font-style: italic;
-		line-height: 1.4;
-		max-width: 300px;
-		padding: 8px 12px;
-		background-color: #f5f5f5;
-		border-left: 3px solid #ccc;
-		margin: 10px 0;
-		display: inline-block;
-	}
-
-	.pdf-inline-link {
-		color: #007bff;
-		text-decoration: underline;
-		transition: color 0.3s ease;
-	}
-
-	.pdf-inline-link:hover {
-		color: #0056b3;
-		text-decoration: underline;
-	}
-
-	.pdf-inline-link:visited {
-		color: #007bff;
-	}
-
-	.loading-button {
-		display: flex;
-	}
-
-	.floating-button {
-		z-index: 1;
-		position: fixed;
-		bottom: 20px;
-		left: 40vw;
-		background-color: #1c1c1c;
-		color: white;
-		border: none;
-		border-radius: 5%;
-		padding: 25px;
-		cursor: pointer;
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-		font-size: 17px;
-	}
-
-	@media (min-width:320px)  {
-		.floating-button {
-			top: 90vh;
-			bottom: unset;
-			margin: -20px 28px;
+	
+	/* Melhor responsividade para mensagens */
+	@media (max-width: 768px) {
+		.message-wrapper .max-w-\[75\%\] {
+			max-width: 85%;
 		}
 	}
 </style>

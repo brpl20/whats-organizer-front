@@ -50,206 +50,113 @@
 	};
 </script>
 
-<div class="upload-container">
-	<button
-		class="drop-area {isDragging ? 'dragging' : ''}"
-		on:dragover|preventDefault={handleDragOver}
-		on:dragleave={handleDragLeave}
-		on:drop|preventDefault={handleDrop}
-		aria-label="Drop files here or click to upload"
-		tabindex="0"
-		on:click={triggerFileInput}
-		type="button"
+<!-- Main Upload Card -->
+<div class="max-w-2xl mx-auto mb-12">
+	<div
+		class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 p-8 md:p-12"
 	>
-		<div class="fade-container">
-			{#if loading}
-				<div class="spinner-container" transition:fade>
-					<div class="spinner" aria-label="Carregando"></div>
+		<!-- Upload Area -->
+		<button
+			class={`w-full  rounded-2xl p-12 text-center transition-all duration-300 cursor-pointer group
+        ${isDragging
+				? "border-emerald-500 bg-emerald-50 scale-105"
+				: "border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400"}`}
+			on:dragover|preventDefault={handleDragOver}
+			on:dragleave={handleDragLeave}
+			on:drop|preventDefault={handleDrop}
+			on:click={triggerFileInput}
+			type="button"
+			aria-label="Drop files here or click to upload"
+		>
+			<div class="flex flex-col items-center space-y-4">
+				<!-- Ícone / Spinner -->
+				<div
+					class={`p-6 rounded-full transition-all duration-300
+          ${isDragging
+						? "bg-emerald-500 scale-110"
+						: "bg-gray-200 group-hover:bg-emerald-100"}`}
+				>
+					{#if loading}
+						<div class="spinner-container" transition:fade>
+							<div
+								class="spinner border-4 border-emerald-500 border-t-transparent rounded-full w-12 h-12 animate-spin"
+								aria-label="Carregando"
+							></div>
+						</div>
+					{:else}
+						<UploadIcon
+							class={`w-12 h-12 transition-colors duration-300
+              ${isDragging
+								? "text-white"
+								: "text-gray-600 group-hover:text-emerald-600"}`}
+						/>
+					{/if}
 				</div>
-			{:else}
-				<div class="icon-container" transition:fade>
-					<UploadIcon />
-				</div>
-			{/if}
-		</div>
-		Arraste seu Arquivo
-		<br />
-		Ou
-		<br />
-		<span class="underline">Clique para fazer Upload</span>
-		<svg class="box-animation" viewBox={`0 0 100 ${svgY}`} preserveAspectRatio="none">
-			<line x1="0" y1="0" x2="100" y2="0" />
-			<line x1="100" y1="0" x2="100" y2={`${svgY}`} />
-			<line x1="100" y1={`${svgY}`} x2="0" y2={`${svgY}`} />
-			<line x1="0" y1={`${svgY}`} x2="0" y2="0" />
-		</svg>
 
-		{#if files.length > 0}
-			<div class="file-list">
-				<h4>Arquivos:</h4>
-				<ul>
-					{#each files as file}
-						<li>{file.name}</li>
-					{/each}
-				</ul>
+				<!-- Texto / Lista -->
+				{#if files.length > 0}
+					<div class="text-center">
+						<p class="text-lg font-semibold text-emerald-600 mb-2">
+							Arquivos selecionados:
+						</p>
+						<ul class="space-y-2">
+							{#each files as file}
+								<li
+									class="text-gray-700 bg-emerald-50 px-4 py-2 rounded-lg inline-block text-sm"
+								>
+									{file.name}
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{:else}
+					<div class="text-center">
+						<p class="text-xl font-semibold text-gray-700 mb-2">
+							Arraste seu arquivo aqui
+						</p>
+						<p class="text-gray-500 mb-4">ou clique para selecionar</p>
+						<p class="text-sm text-gray-400">
+							Suporta arquivos .zip exportados do WhatsApp
+						</p>
+					</div>
+				{/if}
 			</div>
-		{/if}
-	</button>
-	<div class="hidden">
-		<input
-			class="file-input"
-			type="file"
-			bind:this={fileInput}
-			accept=".zip"
-			on:change={(e) => {
-				if (fileInput?.files) {
-					const dataTransfer = new DataTransfer();
-					Array.from(fileInput.files).forEach((file) => dataTransfer.items.add(file));
-					files = Array.from(dataTransfer.files);
-				}
-			}}
-		/>
+
+			<!-- Input escondido -->
+			<input
+				class="hidden"
+				type="file"
+				bind:this={fileInput}
+				accept=".zip"
+				on:change={(e) => {
+					if (fileInput?.files) {
+						files = Array.from(fileInput.files);
+					}
+				}}
+			/>
+		</button>
+
+		<!-- Action Button -->
+		<div class="mt-8 text-center">
+			<button
+		disabled={files.length === 0}
+		class="bg-gradient-to-r from-emerald-600 to-teal-600 
+		       hover:from-emerald-700 hover:to-teal-700 
+		       text-white font-bold py-4 px-12 rounded-2xl shadow-lg 
+		       transition-all duration-300 text-lg
+		       disabled:opacity-50 disabled:cursor-not-allowed"
+	>
+			
+				<div class="flex items-center space-x-3">
+					<span>Processar Arquivo</span>
+				</div>
+			</button>
+		</div>
 	</div>
 </div>
 
 <style>
-	.upload-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 20px;
-		font-family: Arial, sans-serif;
-		margin-bottom: 20px;
-	}
-
-	.drop-area {
-		position: relative;
-		display: flex;
-		align-items: center;
-		flex-direction: column;
-		border-radius: 10px;
-		padding: 30px;
-		text-align: center;
-		color: #005c4b;
-		cursor: pointer;
-		width: 100%;
-		max-width: 400px;
-		border: 0.2px solid #bbb;
-		transition:
-			border-color 0.3s ease,
-			box-shadow 0.3s ease;
-		overflow: hidden;
-		background-color: #f0f8ff;
-	}
-
-	.drop-area > span {
-		color: #001cdd;
-	}
-
-	.drop-area:is(.dragging, :hover) {
-		box-shadow: 0 0 5px #aaa;
-		border-style: inset;
-		border-width: 0.5px;
-	}
-
-	@media (hover: none) {
-		.drop-area:is(.dragging, :active, :focus) {
-			box-shadow: 0 0 5px #aaa;
-			border-style: inset;
-			border-width: 0.5px;
-		}
-
-		.drop-area:is(.dragging, :active, :focus) line {
-			stroke-dashoffset: 0;
-		}
-	}
-
-	.box-animation {
-		width: 100%;
-		height: 100%;
-		position: absolute;
-		top: 0;
-		left: 0;
-		pointer-events: none;
-	}
-
-	.box-animation line {
-		stroke: #007bff;
-		stroke-width: 0.8px;
-		fill: none;
-		stroke-dasharray: 400;
-		stroke-dashoffset: 400;
-		transition: stroke-dashoffset 1.4s linear;
-	}
-
-	.drop-area:is(.dragging, :hover) line {
-		stroke-dashoffset: 0;
-	}
-
-	.file-list {
-		margin-top: 20px;
-		text-align: left;
-		max-width: 400px;
-		width: 100%;
-	}
-
-	.file-list h4 {
-		padding-left: 9px;
-	}
-
-	.file-list ul {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	.file-list li {
-		background-color: #fff;
-		margin-bottom: 5px;
-		padding: 10px;
-		border: 1px solid #ddd;
-		border-radius: 5px;
-		font-size: 0.9rem;
-		animation: slide-in 0.5s ease;
-	}
-
-	.hidden {
-		display: none;
-	}
-
-	.underline {
-		text-decoration-line: underline;
-	}
-
-	.spinner {
-		height: 90px !important;
-		width: 90px !important;
-	}
-
-	@keyframes slide-in {
-		0% {
-			transform: scale(0.5);
-			opacity: 0;
-		}
-		100% {
-			transform: scale(1);
-			opacity: 1;
-		}
-	}
-
-	.fade-container {
-		position: relative;
-		width: 96px;
-		height: 96px;
-		margin-top: -5px;
-		margin-bottom: 5px;
-	}
-
-	.spinner-container,
-	.icon-container {
-		position: absolute;
-		width: 100%;
-		height: 100%;
+	.spinner-container {
 		display: flex;
 		justify-content: center;
 		align-items: center;
