@@ -9,7 +9,7 @@
 	import TranscribeSvg from './TranscribeSvg.svelte';
 	import PrintSvg from './PrinterSvg.svelte';
 	import ErrorSvg from './ErrorSvg.svelte';
-	import { MessageCircle, Upload, Zap, Shield, Info, Smartphone, Apple, FileText } from "lucide-svelte";
+	import { MessageCircle, Upload, Zap, Shield, Info, Smartphone, Apple, FileText, X } from "lucide-svelte";
 
 	/**
 	 * @typedef {import('./types/toast.type.js').ToastTypes} ToastTypes
@@ -664,7 +664,7 @@
 														<div class="grid grid-cols-2 gap-2 mb-3">
 															{#each message.links as link, linkIndex}
 																{#if !(linkIndex % 2) && message.links[linkIndex + 1] !== 'pdf'}
-																	<div class="relative overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
+																	<div class="relative overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
 																		<img
 																			src={link}
 																			alt="Página do Documento"
@@ -706,9 +706,9 @@
 															<img
 																src={message.FileURL}
 																alt="Mídia compartilhada"
-																class="w-full h-auto object-cover hover:scale-105 transition-transform duration-300 cursor-pointer"
+																class="w-full h-auto object-cover hover:scale-110 transition-transform duration-300 cursor-pointer"
 															/>
-															<div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 hover:opacity-100 transition-opacity"></div>
+															<div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
 														</div>
 													</div>
 												<!-- Vídeos -->
@@ -775,13 +775,13 @@
 						href="https://faq.whatsapp.com/1180414079177245/?cms_platform=iphone&helpref=platform_switcher"
 						class="bg-gray-200 p-4 rounded-full hover:bg-emerald-100 transition"
 					>
-						<img src="/apple.png" alt="Apple" class="w-8 h-8" />
+						<img src="/apple.png" alt="Apple" class="w-8 h-8 hover:scale-110 transition-transform duration-300 cursor-pointer" />
 					</a>
 					<a
 						href="https://faq.whatsapp.com/1180414079177245/?helpref=uf_share"
 						class="bg-gray-200 p-4 rounded-full hover:bg-emerald-100 transition"
 					>
-						<img src="/android.png" alt="Android" class="w-8 h-8" />
+						<img src="/android.png" alt="Android" class="w-8 h-8 hover:scale-110 transition-transform duration-300 cursor-pointer" />
 					</a>
 				</div>
 			</div>
@@ -821,7 +821,15 @@
 	<!-- Modais -->
 	{#if showLimitacoesModal}
 		<div class="fixed inset-0 bg-black/60 flex justify-center items-center z-50" on:click={toggleLimitacoesModal}>
-			<div class="bg-white rounded-xl p-8 max-w-md shadow-2xl" on:click|stopPropagation>
+			<div class="bg-white rounded-xl p-8 max-w-md shadow-2xl relative" on:click|stopPropagation>
+				<!-- Botão X para fechar -->
+				<button
+					class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+					on:click={toggleLimitacoesModal}
+				>
+					<X class="w-5 h-5 text-gray-500" />
+				</button>
+				
 				<h2 class="text-2xl font-bold mb-4">Limitações</h2>
 				<ul class="list-disc list-inside text-gray-700 space-y-2">
 					<li>Grupos não suportados</li>
@@ -834,7 +842,15 @@
 
 	{#if showLGPDModal}
 		<div class="fixed inset-0 bg-black/60 flex justify-center items-center z-50" on:click={toggleLGPDModal}>
-			<div class="bg-white rounded-xl p-8 max-w-md shadow-2xl" on:click|stopPropagation>
+			<div class="bg-white rounded-xl p-8 max-w-md shadow-2xl relative" on:click|stopPropagation>
+				<!-- Botão X para fechar -->
+				<button
+					class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+					on:click={toggleLGPDModal}
+				>
+					<X class="w-5 h-5 text-gray-500" />
+				</button>
+				
 				<h2 class="text-2xl font-bold mb-4">LGPD</h2>
 				<p class="text-gray-700">
 					Não coletamos nenhum dado e todos os arquivos são destruídos após o uso.
