@@ -124,11 +124,12 @@
 
 			<!-- Input escondido -->
 			<input
-				class="hidden"
-				type="file"
+			class="hidden"
+			type="file"
 				bind:this={fileInput}
 				accept=".zip"
 				on:change={(e) => {
+					console.log('lel')
 					if (fileInput?.files) {
 						files = Array.from(fileInput.files);
 					}
@@ -139,12 +140,14 @@
 		<!-- Action Button -->
 		<div class="mt-8 text-center">
 			<button
+			data-testid="submit-zip-btn"
 		disabled={files.length === 0}
 		class="bg-gradient-to-r from-emerald-600 to-teal-600 
 		       hover:from-emerald-700 hover:to-teal-700 
 		       text-white font-bold py-4 px-12 rounded-2xl shadow-lg 
 		       transition-all duration-300 text-lg
 		       disabled:opacity-50 disabled:cursor-not-allowed"
+			   type="submit"
 	>
 			
 				<div class="flex items-center space-x-3">
