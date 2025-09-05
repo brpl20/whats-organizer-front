@@ -809,7 +809,7 @@
 														</div>
 														<!-- Imagens -->
 													{:else if isImgFile(message.FileAttached)}
-														<div class="mb-2">
+														<div class="mb-2" data-testid="imagem">
 															<div
 																class="relative overflow-hidden rounded-lg shadow-lg max-w-xs cursor-pointer transform hover:scale-105 transition-all duration-300"
 																on:click={() =>
@@ -873,7 +873,7 @@
 													{/if}
 												{:else}
 													<!-- Mensagem de texto -->
-													<div class="text-sm leading-relaxed whitespace-pre-wrap break-words">
+													<div class="text-sm leading-relaxed whitespace-pre-wrap break-words" data-testid="texto">
 														{message.Message}
 													</div>
 												{/if}

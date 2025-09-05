@@ -15,7 +15,7 @@
 
 </script>
 
-<div class={`audio-message ${browser}`}>
+<div class={`audio-message ${browser}`} data-testid="audio">
 	<div class="audio-filename">{filename}</div>
 	<div class="wrap">
 		<audio

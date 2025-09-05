@@ -1,19 +1,19 @@
 import { expect, test } from '@playwright/test';
 import fs from 'fs/promises';
 
-test('loaded Whats Organizer', async ({ page }) => {
+test('Upload Chat', async ({ page }) => {
   await page.goto('/');
   
   const title = page.locator('h1')
   const uploadForm = page.getByTestId('file-upload-form')
-  const uploadInput = page.locator('[data-testid="playwright-inject-media"]')
+  const uploadInput = uploadForm.locator('input[type="file"]')
   const submitBtn = page.getByTestId('submit-zip-btn')
 
   await expect(title).toBeVisible();
   await expect(uploadForm).toBeVisible();
   await expect(submitBtn).toBeVisible();
   
-  const filePath = '/home/skid/My_Code/whats-organizer/tests/android-tom/teste-simples-symlink-deve-falhar.zip'
+  const filePath = '/home/skid/My_Code/whats-organizer/tests/android-bruno/teste-audio-curto-uma-imagem.zip'
   const fileBuffer = await fs.readFile(filePath)
 
   await uploadInput.evaluate((input) => {
@@ -21,22 +21,29 @@ test('loaded Whats Organizer', async ({ page }) => {
     input.removeAttribute('disabled')
   })
   
-
-  await uploadInput.setInputFiles([
-    {
-      name: 'teste-simples-symlink-deve-falhar.zip',
-      mimeType: 'application/zip',
-      buffer: fileBuffer
-    }
-  ])
-
-  await uploadInput.evaluate((input) => input.dispatchEvent(new Event('change', { bubbles: true })))
-
-  await new Promise((resolve) => setTimeout(resolve, 30000))
-  await submitBtn.evaluate((e) => {
-    e.removeAttribute('class')
-    e.removeAttribute('disabled')
+  const filename = 'teste-conversa.zip'
+  await uploadInput.setInputFiles({
+    name: filename,
+    mimeType: 'application/zip',
+    buffer: fileBuffer
   })
-  await submitBtn.click();
-  await new Promise((resolve) => setTimeout(resolve, 10000))
-});
+
+  await expect(page.locator(`text=${filename}`)).toBeVisible()
+
+  const [response] = await Promise.all([
+    page.waitForResponse(res => (
+      res.request().method() === 'POST'
+      && res.headers()['content-type']?.includes('application/json')
+      && res.json().then(() => true).catch(() => false)
+    )), submitBtn.click()])
+
+  expect(response).toBeTruthy()
+
+  for (const chatIndicator of ['toast-info', 'playwright-chat']) {
+    await expect(page.getByTestId(chatIndicator)).toBeVisible()
+  }
+
+  for (const messageIndicator of ['audio', 'imagem', 'texto']) {
+    await expect(page.locator(`[data-testid="${messageIndicator}"]`).first()).toBeVisible()
+  }
+})

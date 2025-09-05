@@ -65,10 +65,11 @@
 	const onDismiss = () => {
 		requestAnimatedDismiss();
 	};
+
 </script>
 
 {#if !removed}
-	<div class="fixed z-50 left-1/2 -translate-x-1/2 mt-4">
+	<div class="fixed z-50 left-1/2 -translate-x-1/2 mt-4" data-testid={`toast${error ? '-error' : '-info'}`}>
 		<div
 			role="alert"
 			class="

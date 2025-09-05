@@ -49,6 +49,7 @@
 		"lucide-svelte": "^0.540.0",
 		"mammoth": "^1.8.0",
 		"pdfjs-dist": "^4.6.82",
+		"pnpm": "^10.15.1",
 		"react-pdf": "^9.1.0",
 		"socket.io-client": "^4.8.0",
 		"svelte-youtube-lite": "^0.5.1",
