@@ -17,28 +17,52 @@ jobs:
         port: ${{ secrets.PORT }}
         script: |
           export PROJECT=front
-          export PROJECT_DIR="/root/whats-organizer-${PROJECT}"
-          export ENV_DIR=/root/envs/${PROJECT}
+          export HOME="/home/Pellizzetti"
+          export PROJECT_DIR="${HOME}/whats-organizer-${PROJECT}"
+          export ENV_DIR="${HOME}/env/${PROJECT}"
           export ERROR=false
           export DISK_USAGE=$(df -h / | egrep -o "[0-9]+%" | cut -d "%" -f 1)
           export MESSAGE="Whats-Organizer-${PROJECT}:"
-          if [ ! -d ${PROJECT_DIR} ]; then
-            mkdir ${PROJECT_DIR}
-            cd ${PROJECT_DIR}
-            git clone https://github.com/${{ github.repository }} ${PROJECT_DIR}
-          else
-            cd ${PROJECT_DIR}
-            git reset --hard origin
-            git pull
+          export GIT_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          if ! command -v git >/dev/null 2>&1; then
+              if command -v pacman >/dev/null 2>&1; then
+                pacman --noconfirm -S git
+              fi
           fi
-          cp ${ENV_DIR}/.env .
-          cp ${ENV_DIR}/nginx.env ./infra/server/.env
-          docker compose build || \
-            export ERROR=true
-          docker compose up -d || \
-            export ERROR=true
-          docker image prune --force
-          docker container prune --force
+          if [ ! -d ${PROJECT_DIR}/.git ]; then
+            rm -rf "${PROJECT_DIR}"
+            mkdir -p "${PROJECT_DIR}"
+            cd ${PROJECT_DIR}
+            git clone ${GIT_URL} .
+          else
+            cd "${PROJECT_DIR}"
+            git remote set-url origin ${GIT_URL}
+            git fetch origin main
+            git reset --hard origin/main
+          fi
+          if [ -f "${ENV_DIR}/.env" ]; then
+            cp "${ENV_DIR}/.env" .
+          fi
+          if [ -f "${ENV_DIR}/nginx.env" ]; then
+            cp "${ENV_DIR}/nginx.env" ./infra/server/.env
+          fi
+          mkdir -p zip_tests && chown python:python zip_tests
+          export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+          if [ ! -d "${NVM_DIR}" ]; then
+            curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh" | bash || export ERROR=true
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm install 20 || export ERROR=true
+            nvm use 20 || export ERROR=true
+          else
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          fi
+          if ! command -v pnpm >/dev/null 2>&1; then
+            curl -fsSL https://get.pnpm.io/install.sh | sh - || export ERROR=true
+            source $HOME/.bashrc
+          fi
+          pnpm install --frozen-lockfile || export ERROR=true
+          pnpm run build
+          sh -c "node --env-file=.env build/index & && disown"
           if [ ${ERROR} = true ]; then
             export MESSAGE="${MESSAGE} Falhou ao Subir Imagem de Docker!"
           else
@@ -49,3 +73,5 @@ jobs:
           curl -X POST "https://hooks.zapier.com/hooks/catch/1863715/215sl1w/" \
                -H "Content-Type: application/json" \
                -d "{ \"message\": \"${MESSAGE}\" }"
+
+
