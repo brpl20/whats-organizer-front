@@ -9,7 +9,7 @@
 	import TranscribeSvg from './TranscribeSvg.svelte';
 	import PrintSvg from './PrinterSvg.svelte';
 	import ErrorSvg from './ErrorSvg.svelte';
-	import { MessageCircle, FileText, X, Download } from 'lucide-svelte';
+	import { MessageCircle, FileText, X, Download, AlertTriangle, Shield, Info } from 'lucide-svelte';
 
 	/**
 	 * @typedef {import('./types/toast.type.js').ToastTypes} ToastTypes
@@ -1105,60 +1105,165 @@
 		</div>
 	{/if}
 
-	<!-- Modais existentes -->
+	<!-- Modal de Limitações -->
 	{#if showLimitacoesModal}
 		<div
-			class="fixed inset-0 bg-black/60 flex justify-center items-center z-50 p-4"
+			class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
 			on:click={toggleLimitacoesModal}
 			data-testid="limitacoes-modal"
+			transition:fade={{ duration: 300 }}
 		>
-			<div class="bg-white rounded-xl max-w-md w-full shadow-2xl" on:click|stopPropagation>
+			<div 
+				class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-gray-200 overflow-hidden transform transition-all duration-300 scale-95 hover:scale-100" 
+				on:click|stopPropagation
+			>
 				<!-- Header do Modal -->
-				<div class="flex items-center justify-between p-6 border-b border-gray-200">
-					<h2 class="text-2xl font-bold text-gray-800">Limitações</h2>
-					<button
-						on:click={toggleLimitacoesModal}
-						class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-						title="Fechar"
-					>
-						<X class="w-5 h-5 text-gray-600" />
-					</button>
+				<div class="bg-gradient-to-r from-orange-500 to-amber-500 px-8 py-6 text-white">
+					<div class="flex items-center justify-between">
+						<div class="flex items-center space-x-3">
+							<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+								<AlertTriangle class="w-6 h-6" />
+							</div>
+							<div>
+								<h2 class="text-2xl font-bold tracking-tight">Limitações</h2>
+								<p class="text-white/90 text-sm mt-1">Informações importantes sobre o sistema</p>
+							</div>
+						</div>
+						<button
+							on:click={toggleLimitacoesModal}
+							class="p-2 hover:bg-white/20 rounded-lg transition-colors"
+							title="Fechar"
+						>
+							<X class="w-5 h-5" />
+						</button>
+					</div>
 				</div>
+
 				<!-- Conteúdo -->
-				<div class="p-6">
-					<ul class="list-disc list-inside text-gray-700 space-y-2">
-						<li>Grupos não suportados</li>
-						<li>Tamanho máximo dos arquivos: 40 Mb</li>
-						<li>Não confere garantia de autenticidade</li>
-					</ul>
+				<div class="px-8 py-8">
+					<div class="space-y-6">
+						<div class="flex items-start space-x-4">
+							<div class="w-2 h-2 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
+							<div>
+								<h4 class="font-semibold text-gray-900 mb-1">Grupos não suportados</h4>
+								<p class="text-gray-600 text-sm leading-relaxed">
+									Atualmente, o sistema processa apenas conversas individuais do WhatsApp.
+								</p>
+							</div>
+						</div>
+
+						<div class="flex items-start space-x-4">
+							<div class="w-2 h-2 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
+							<div>
+								<h4 class="font-semibold text-gray-900 mb-1">Limite de arquivo: 40 MB</h4>
+								<p class="text-gray-600 text-sm leading-relaxed">
+									O tamanho máximo permitido para upload é de 40 megabytes por arquivo.
+								</p>
+							</div>
+						</div>
+
+						<div class="flex items-start space-x-4">
+							<div class="w-2 h-2 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
+							<div>
+								<h4 class="font-semibold text-gray-900 mb-1">Sem garantia de autenticidade</h4>
+								<p class="text-gray-600 text-sm leading-relaxed">
+									O sistema não verifica a autenticidade das mensagens processadas.
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="mt-8 pt-6 border-t border-gray-100">
+						<div class="flex items-center space-x-2 text-amber-600">
+							<Info class="w-4 h-4" />
+							<span class="text-sm font-medium">
+								Essas limitações ajudam a garantir o melhor desempenho do sistema.
+							</span>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
 	{/if}
 
+	<!-- Modal de LGPD -->
 	{#if showLGPDModal}
 		<div
-			class="fixed inset-0 bg-black/60 flex justify-center items-center z-50 p-4"
+			class="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
 			on:click={toggleLGPDModal}
 			data-testid="lgpd-modal"
+			transition:fade={{ duration: 300 }}
 		>
-			<div class="bg-white rounded-xl max-w-md w-full shadow-2xl" on:click|stopPropagation>
+			<div 
+				class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-gray-200 overflow-hidden transform transition-all duration-300 scale-95 hover:scale-100" 
+				on:click|stopPropagation
+			>
 				<!-- Header do Modal -->
-				<div class="flex items-center justify-between p-6 border-b border-gray-200">
-					<h2 class="text-2xl font-bold text-gray-800">LGPD</h2>
-					<button
-						on:click={toggleLGPDModal}
-						class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-						title="Fechar"
-					>
-						<X class="w-5 h-5 text-gray-600" />
-					</button>
+				<div class="bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-6 text-white">
+					<div class="flex items-center justify-between">
+						<div class="flex items-center space-x-3">
+							<div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+								<Shield class="w-6 h-6" />
+							</div>
+							<div>
+								<h2 class="text-2xl font-bold tracking-tight">LGPD</h2>
+								<p class="text-white/90 text-sm mt-1">Lei Geral de Proteção de Dados</p>
+							</div>
+						</div>
+						<button
+							on:click={toggleLGPDModal}
+							class="p-2 hover:bg-white/20 rounded-lg transition-colors"
+							title="Fechar"
+						>
+							<X class="w-5 h-5" />
+						</button>
+					</div>
 				</div>
+
 				<!-- Conteúdo -->
-				<div class="p-6">
-					<p class="text-gray-700">
-						Não coletamos nenhum dado e todos os arquivos são destruídos após o uso.
-					</p>
+				<div class="px-8 py-8">
+					<div class="space-y-6">
+						<div class="text-center">
+							<div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+								<Shield class="w-8 h-8 text-green-600" />
+							</div>
+							<h3 class="text-xl font-bold text-gray-900 mb-2">Seus dados estão seguros</h3>
+						</div>
+
+						<div class="bg-green-50 rounded-xl p-6 border border-green-100">
+							<p class="text-gray-700 leading-relaxed text-center">
+								<strong class="text-green-800">Não coletamos nenhum dado pessoal</strong> e todos os arquivos 
+								enviados são automaticamente <strong class="text-green-800">destruídos após o processamento</strong>, 
+								garantindo total privacidade e segurança.
+							</p>
+						</div>
+
+						<div class="grid grid-cols-2 gap-4 pt-4">
+							<div class="text-center">
+								<div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+									<span class="text-2xl">🚫</span>
+								</div>
+								<p class="text-sm font-semibold text-gray-700">Não coletamos</p>
+								<p class="text-xs text-gray-500">dados pessoais</p>
+							</div>
+							<div class="text-center">
+								<div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+									<span class="text-2xl">🗑️</span>
+								</div>
+								<p class="text-sm font-semibold text-gray-700">Arquivos removidos</p>
+								<p class="text-xs text-gray-500">automaticamente</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="mt-8 pt-6 border-t border-gray-100">
+						<div class="flex items-center justify-center space-x-2 text-green-600">
+							<Shield class="w-4 h-4" />
+							<span class="text-sm font-medium">
+								100% compatível com a LGPD
+							</span>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
