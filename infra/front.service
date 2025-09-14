@@ -6,7 +6,7 @@ After=network.target
 User=front
 Group=front
 WorkingDirectory=/home/front/whats-organizer-front
-ExecStart=/bin/sh -lc 'export NVM_DIR="$([ -z \"${XDG_CONFIG_HOME-}\" ] && echo \"${HOME}/.nvm\" || echo \"${XDG_CONFIG_HOME}/nvm\")" && . \"$NVM_DIR/nvm.sh\" && exec node --env-file=.env build/index --host 0.0.0.0 --port 3000'
+ExecStart=/bin/sh -lc '. ~front/.bashrc && node --env-file=.env build/index'
 Restart=always
 RestartSec=5
 NoNewPrivileges=true
