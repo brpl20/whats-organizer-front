@@ -112,11 +112,10 @@ jobs:
           if [ "$(</etc/hostname)" != "$HOST" ]; then
             hostnamectl set-hostname "${HOST}"
           fi
-  
-          systemctl restart $("${SERVICE}" | xargs -I{} systemd-escape --template="${SERVICE}" {}) ||
-            export ERROR=true
-          systemctl enable $("${SERVICE}" | xargs -I{} systemd-escape --template="${SERVICE}" {}) ||
-            export ERROR=true
+
+          ESCAPED_SERVICE=$(systemd-escape "${SERVICE}")
+          systemctl restart "${ESCAPED_SERVICE}" || export ERROR=true
+          systemctl enable "${ESCAPED_SERVICE}" || export ERROR=true
 
           if [ ${ERROR} = true ]; then
             export MESSAGE="${MESSAGE} Falhou ao Subir Imagem de Docker!"
